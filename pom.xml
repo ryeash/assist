@@ -7,20 +7,10 @@
     <groupId>vest</groupId>
     <artifactId>assist</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <properties>
+        <compiler.encoding>UTF-8</compiler.encoding>
+        <compiler.version>1.8</compiler.version>
         <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
@@ -50,5 +40,28 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <verbose>false</verbose>
+                    <fork>false</fork>
+                    <compilerVersion>${compiler.version}</compilerVersion>
+                    <source>${compiler.version}</source>
+                    <target>${compiler.version}</target>
+                    <encoding>${compiler.encoding}</encoding>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
