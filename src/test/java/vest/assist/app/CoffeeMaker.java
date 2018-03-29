@@ -4,6 +4,8 @@ import java.io.IOException;
 
 public interface CoffeeMaker {
 
+    @Timed
+        // used by the TimingAspect to validate annotation usage
     String brew();
 
     default void withParams(Integer i, String str) {

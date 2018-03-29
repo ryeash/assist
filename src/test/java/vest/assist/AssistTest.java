@@ -6,7 +6,18 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import vest.assist.app.*;
+import vest.assist.app.Child;
+import vest.assist.app.CoffeeMaker;
+import vest.assist.app.Coosie;
+import vest.assist.app.FrenchPress;
+import vest.assist.app.Keurig;
+import vest.assist.app.Leather;
+import vest.assist.app.Log;
+import vest.assist.app.Parent;
+import vest.assist.app.PourOver;
+import vest.assist.app.ScannedComponent;
+import vest.assist.app.TCCollectionInjection;
+import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -270,6 +281,24 @@ public class AssistTest extends Assert {
     public void instances() {
         assist.instances(CoffeeMaker.class)
                 .forEach(cm -> log.info("{}", cm.getClass().getSimpleName()));
+    }
+
+    @Test
+    public void wiringListsAndSets() {
+        TCCollectionInjection man = assist.instance(TCCollectionInjection.class);
+        assertNotNull(man.coffeeMakers);
+        assertFalse(man.coffeeMakers.isEmpty());
+
+        assertNotNull(man.coffeeMakerSet);
+        assertFalse(man.coffeeMakerSet.isEmpty());
+
+        assertNotNull(man.coffeeMakerCollection);
+        assertFalse(man.coffeeMakerCollection.isEmpty());
+
+        CoffeeMaker cm = assist.instance(CoffeeMaker.class);
+        assertTrue(man.coffeeMakers.contains(cm));
+        assertTrue(man.coffeeMakerSet.contains(cm));
+        assertTrue(man.coffeeMakerCollection.contains(cm));
     }
 
 }

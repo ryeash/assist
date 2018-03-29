@@ -26,14 +26,14 @@ The `@Singleton` annotation can be added to FrenchPress to indicate the desired 
 @Singleton
 public class FrenchPress ...
 ```
-In this case the Assist will ensure it only ever instantiates one instance of FrenchPress:
+In this case Assist will ensure it only ever instantiates one instance of FrenchPress:
 ```java
 FrenchPress fp1 = assist.instance(FrenchPress.class);
 FrenchPress fp2 = assist.instance(FrenchPress.class);
 assert fp1 == fp2 // true
 ```
 
-This is the basic function of the Assist: create and inject scoped instances of classes (while adhering to the
+This is the basic function of Assist: create and inject scoped instances of classes (while adhering to the
 specifications defined in the javax.inject documentation).
 
 ## Application Configuration
@@ -118,7 +118,7 @@ public class Application {
 }
 ```
 
-Just ask the assist:
+Just ask Assist:
 ```java
 Assist assist = new Assist();
 assist.addConfig(AppConfig.class);
@@ -146,8 +146,8 @@ public class AppConfig {
     ...
 }
 ```
-Primary tells the Assist that when an unqualified Provider of the type is requested,
-that provider should be returned.
+This tells Assist that when an unqualified Provider of the type is requested,
+the primary provider should be returned.
 ```java
 CoffeeMaker cm = assist.instance(CoffeeMaker.class);
 assert cm instanceof FrenchPress // true
@@ -261,17 +261,17 @@ It is possible (and recommended with simple application architectures) to define
 classes directly, rather than using an application configuration class.
 ```java
 Assist assist = new Assist();
-// this says that for the CoffeeMaker interface, we want to use the Keurig class.
+// this declares that for the CoffeeMaker interface, we want to use the Keurig class.
 assist.addImplementingClass(CoffeeMaker.class, Keurig.class);
 // we now have a provider for CoffeeMaker
 assert assist.hasProvider(CoffeeMaker.class);
 // and as expected when we get a CoffeeMaker instance, it's a Keurig
-assert assist.instance(CoffeeMaker.class).getClass() == Keurig.class; // true
+assert assist.instance(CoffeeMaker.class).getClass() == Keurig.class;
 ```
 
 ### Shutdown Container
 
-All objects instantiated by the Assist that are AutoCloseable will be tracked by a WeakHashMap and when
+All objects instantiated by Assist that are AutoCloseable will be tracked by a WeakHashMap and when
 ```assist.close()``` is called, they will be closed as appropriate.
 
 ## Extensibility
@@ -286,7 +286,7 @@ Create the scope:
 @Retention(value = RetentionPolicy.RUNTIME)
 @Documented
 @Scope // <-- Scopes MUST have the 'parent' @Scope annotation
-public @interface Request {
+public @interface PerRequest {
 }
 ```
 
@@ -310,13 +310,13 @@ public class RequestScopeProvider<T> implements ScopeProvider<T> {
 }
 ```
 
-Register it with the Assist:
+Register it with Assist:
 ```java
 Assist assist = new Assist();
 assist.registerScope(PerRequest.class, RequestScopeProvider.class);
 ```
 
-Now class and factory method providers with the @PerRequest scope annotation will create one instance per request thread.
+Now class and factory method providers with the @PerRequest scope annotation will create one instance per request.
 
 Note: ScopeProvider implementations must be inject compatible, see:[@Inject](http://docs.oracle.com/javaee/7/api/javax/inject/Inject.html).
 Internally when creating a provider chain, the ScopeProvider itself is created using the
@@ -326,7 +326,7 @@ injection mechanism which will throw errors if the implementation can't be injec
 ### InstanceInterceptor
 
 InstanceInterceptors are used (in general) to inject fields or methods of a class after an instance has been created.
-For example, the InjectAnnotationInterceptor injects the @Inject fields, and methods of a class.
+For example, the InjectAnnotationInterceptor injects the @Inject fields and methods of a class.
 
 To add, for example, a log injector:
 
@@ -359,7 +359,7 @@ created using the Slf4j LoggerFactory.
 
 Custom handling of @Inject fields and methods can be performed by adding additional ValueLookup implementations to the
 assist instance. A ValueLookup is tasked with finding the value that should be used to set an @Inject marked Field
-or an @Inject marked method's Parameter values. During injection processing the Assist instance will iterate through all
+or an @Inject marked method's Parameter values. During injection processing Assist instance will iterate through all
 registered ValueLookups (in prioritized order) until one of them returns a non-null value for the target.
 
 A new ValueLookup can be registered with:
@@ -370,11 +370,11 @@ assist.addValueLookup(new CustomValueLookup());
 ### Prioritized
 The configuration related interfaces in the assist module all implement the Prioritized interface. This provides a way to
 control the order of execution for InstanceInterceptors and ValueLookups. The default priority
-is 1000. There's no simple rules for what priority should be set to for custom configurations, but you can use
-assist.toString() to get a diagnostic printout of what the Assist has registered and the order of execution.
+is 1000. There's no simple rule for what priority should be set to for custom configurations, but you can use
+assist.toString() to get a diagnostic printout of what Assist has registered and the order of execution.
 
 ## Best Practices
 
-Configure the Assist instance (just one) as early as possible in the main thread (ideally it's the very first thing that happens).
+Configure your Assist instance (just one) as early as possible in the main thread (ideally it's the very first thing that happens).
 It's much better to have your app fail early and kill the JVM than at some random point down the road when it tries to
 configure a provider in a request thread and it leaves everything in a walking wounded state.

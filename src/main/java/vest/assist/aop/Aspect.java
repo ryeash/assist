@@ -52,7 +52,7 @@ public abstract class Aspect implements InvocationHandler {
      * arguments. This method defaults to a no-op.
      *
      * @param invocation The Invocation object that tracks the references associated with the method invocation and results of the invocation
-     * @throws Throwable for any unexpected exception
+     * @throws Throwable for any error during execution
      */
     public void pre(Invocation invocation) throws Throwable {
         // no-op
@@ -64,7 +64,7 @@ public abstract class Aspect implements InvocationHandler {
      * given, on the object given, using {@link Method#invoke(Object, Object...)}.
      *
      * @param invocation The Invocation object that tracks the references associated with the method invocation and results of the invocation
-     * @throws Throwable for any unexpected exception
+     * @throws Throwable for any error during execution
      */
     public void exec(Invocation invocation) throws Throwable {
         invocation.invoke();
@@ -72,10 +72,11 @@ public abstract class Aspect implements InvocationHandler {
 
     /**
      * Called after execution of a method. Allows implementations to, for instance, log the result, or (alarmingly) replace
-     * the result of method invocation. This method defaults to a no-op.
+     * the result of method invocation (including if the normal invocation of the method caused an exception).
+     * This method defaults to a no-op.
      *
      * @param invocation The Invocation object that tracks the references associated with the method invocation and results of the invocation
-     * @throws Throwable for any unexpected exception
+     * @throws Throwable for any error during execution
      */
     public void post(Invocation invocation) throws Throwable {
         // no-op

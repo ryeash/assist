@@ -14,12 +14,16 @@ public class TimingAspect extends Aspect {
 
     @Override
     public void exec(Invocation invocation) throws Throwable {
-        long start = System.nanoTime();
-        try {
+        if (invocation.getMethod().isAnnotationPresent(Timed.class)) {
+            long start = System.nanoTime();
+            try {
+                super.exec(invocation);
+                invocation.setResult(invocation.getResult() + " timed");
+            } finally {
+                log.info("ran [{}] in {}ms", invocation, (System.nanoTime() - start) / 1_000_000d);
+            }
+        } else {
             super.exec(invocation);
-            invocation.setResult(invocation.getResult() + " timed");
-        } finally {
-            log.info("ran [{}] in {}ms", invocation, (System.nanoTime() - start) / 1_000_000d);
         }
     }
 }
