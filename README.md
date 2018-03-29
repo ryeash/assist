@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ryeash/assist.svg?branch=master)](https://travis-ci.org/ryeash/assist)
+
 assist
 ======
 Lightweight dependency injection framework based on [javax.inject](http://docs.oracle.com/javaee/7/api/javax/inject/package-summary.html "javadoc").
