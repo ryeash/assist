@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ryeash/assist.svg?branch=master)](https://travis-ci.org/ryeash/assist)
+[![Coverage Status](https://coveralls.io/repos/github/ryeash/assist/badge.svg?branch=master)](https://coveralls.io/github/ryeash/assist?branch=master)
 
 assist
 ======
