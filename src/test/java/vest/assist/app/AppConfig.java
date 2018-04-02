@@ -81,4 +81,10 @@ public class AppConfig extends BaseAppConfig {
     public ScheduledExecutorService scheduledExecutorServiceFactory() {
         return Executors.newSingleThreadScheduledExecutor();
     }
+
+    @Factory
+    @Singleton
+    public OneClassForMultipleDependencies multipleDeps() {
+        return new OneClassForMultipleDependencies();
+    }
 }

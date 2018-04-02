@@ -9,10 +9,13 @@ import org.testng.annotations.Test;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.Coosie;
+import vest.assist.app.DAO1;
+import vest.assist.app.DAO2;
 import vest.assist.app.FrenchPress;
 import vest.assist.app.Keurig;
 import vest.assist.app.Leather;
 import vest.assist.app.Log;
+import vest.assist.app.OneClassForMultipleDependencies;
 import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
@@ -301,4 +304,14 @@ public class AssistTest extends Assert {
         assertTrue(man.coffeeMakerCollection.contains(cm));
     }
 
+    @Test
+    public void multipleDependenciesSatisfiedByOneClass() {
+        DAO1 dao1 = assist.instance(DAO1.class);
+        assertNotNull(dao1);
+        assertTrue(dao1.getClass() == OneClassForMultipleDependencies.class);
+
+        DAO2 dao2 = assist.instance(DAO2.class);
+        assertNotNull(dao2);
+        assertTrue(dao2.getClass() == OneClassForMultipleDependencies.class);
+    }
 }

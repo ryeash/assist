@@ -18,7 +18,7 @@ public class FrenchPress implements CoffeeMaker, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         log.info("closing the french press {}", hashCode());
     }
 }

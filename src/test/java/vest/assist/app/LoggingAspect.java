@@ -16,12 +16,12 @@ public class LoggingAspect extends Aspect {
     }
 
     @Override
-    public void pre(Invocation invocation) throws Throwable {
+    public void pre(Invocation invocation) {
         log.info("entering {}", invocation);
     }
 
     @Override
-    public void post(Invocation invocation) throws Throwable {
+    public void post(Invocation invocation) {
         log.info("exiting {}", invocation);
     }
 }
