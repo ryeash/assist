@@ -25,8 +25,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,7 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -81,6 +78,7 @@ public class Assist implements Closeable {
     public Assist() {
         addScopeProvider(Singleton.class, SingletonScopeProvider.class);
         addScopeProvider(ThreadLocal.class, ThreadLocalScopeProvider.class);
+        addValueLookup(new ProviderTypeValueLookup(this));
 
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);
@@ -216,6 +214,14 @@ public class Assist implements Closeable {
     public <T> Stream<Provider<T>> providersFor(Class<T> type) {
         return map.entrySet().stream()
                 .filter(e -> type.isAssignableFrom(e.getKey().type()))
+                .flatMap(e -> e.getValue().stream())
+                .distinct()
+                .map(p -> (Provider<T>) p);
+    }
+
+    public <T> Stream<Provider<T>> providersFor(Class<T> type, Annotation qualifier) {
+        return map.entrySet().stream()
+                .filter(e -> type.isAssignableFrom(e.getKey().type()) && Objects.equals(qualifier, e.getKey().qualifier))
                 .flatMap(e -> e.getValue().stream())
                 .distinct()
                 .map(p -> (Provider<T>) p);
@@ -571,42 +577,18 @@ public class Assist implements Closeable {
      */
     public Object valueFor(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
         // give the registered ValueLookups the first chance to find a value
-        for (ValueLookup valueLookup : valueLookups) {
-            try {
+        try {
+            for (ValueLookup valueLookup : valueLookups) {
                 Object o = valueLookup.lookup(rawType, genericType, annotatedElement);
                 if (o != null) {
                     log.debug("value for {} was found in {}", annotatedElement, valueLookup);
                     return o;
                 }
-            } catch (Throwable e) {
-                throw new RuntimeException("error finding injectable value for: " + annotatedElement, e);
             }
+        } catch (Throwable e) {
+            throw new RuntimeException("error finding injectable value for: " + annotatedElement, e);
         }
-
-        // if no ValueLookup fulfilled the injection
-        // fall back to standard injection based on type
-        Annotation qualifier = Reflector.getQualifier(annotatedElement);
-        if (rawType == Provider.class) {
-            Class<?> realType = Reflector.getParameterizedType(genericType);
-            if (realType == null) {
-                throw new IllegalArgumentException("Provider was not defined with a specific type, injection is impossible for: " + annotatedElement);
-            }
-            return providerFor(realType, qualifier);
-        } else if (Collection.class.isAssignableFrom(rawType)) {
-            Class<?> realType = Reflector.getParameterizedType(genericType);
-            if (realType == null) {
-                throw new IllegalArgumentException("Collection was not defined with a specific type, injection is impossible for: " + annotatedElement);
-            }
-            Stream<Object> stream = providersFor(realType).map(Provider::get);
-
-            if (rawType == Set.class) {
-                return stream.collect(Collectors.toSet());
-            } else {
-                return stream.collect(Collectors.toCollection(ArrayList::new));
-            }
-        } else {
-            return instance(rawType, qualifier);
-        }
+        throw new RuntimeException("internal error: no value lookup is configured");
     }
 
     @Override
