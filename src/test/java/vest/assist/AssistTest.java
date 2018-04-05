@@ -20,6 +20,7 @@ import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
+import vest.assist.app.TCResourceInjection;
 import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
@@ -313,5 +314,11 @@ public class AssistTest extends Assert {
         DAO2 dao2 = assist.instance(DAO2.class);
         assertNotNull(dao2);
         assertTrue(dao2.getClass() == OneClassForMultipleDependencies.class);
+    }
+
+    @Test
+    public void resourceInjectionTest() {
+        TCResourceInjection instance = assist.instance(TCResourceInjection.class);
+        assertNotNull(instance.fieldInjected);
     }
 }

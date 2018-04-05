@@ -4,7 +4,10 @@ import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
 import vest.assist.Reflector;
 
+import javax.annotation.Resource;
 import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
@@ -22,22 +25,32 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
     public void intercept(Object instance) {
         Objects.requireNonNull(instance, "null pointers can not be injected");
         Reflector reflector = Reflector.of(instance);
-        // inject fields first
-        reflector.forAnnotatedFields(Inject.class, (inject, field) -> {
-            try {
-                field.set(instance, assist.valueFor(field));
-            } catch (Throwable e) {
-                throw new RuntimeException("could not inject field: " + field, e);
+
+        for (Field field : reflector.fields()) {
+            if (field.isAnnotationPresent(Inject.class) || field.isAnnotationPresent(Resource.class)) {
+                try {
+                    if (!field.isAccessible()) {
+                        field.setAccessible(true);
+                    }
+                    field.set(instance, assist.valueFor(field));
+                } catch (Throwable e) {
+                    throw new RuntimeException("could not inject field: " + field, e);
+                }
             }
-        });
-        // inject methods second, in descending order from parent to child
-        reflector.forAnnotatedMethods(Inject.class, (inject, method) -> {
-            try {
-                method.invoke(instance, assist.getParameterValues(method));
-            } catch (Throwable e) {
-                throw new RuntimeException("error invoking injectable method: " + method, e);
+        }
+
+        for (Method method : reflector.methods()) {
+            if (method.isAnnotationPresent(Inject.class)) {
+                try {
+                    if (!method.isAccessible()) {
+                        method.setAccessible(true);
+                    }
+                    method.invoke(instance, assist.getParameterValues(method));
+                } catch (Throwable e) {
+                    throw new RuntimeException("error invoking injectable method: " + method, e);
+                }
             }
-        });
+        }
     }
 
     @Override

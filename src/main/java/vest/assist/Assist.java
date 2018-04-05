@@ -219,6 +219,14 @@ public class Assist implements Closeable {
                 .map(p -> (Provider<T>) p);
     }
 
+    /**
+     * Get a steram of all providers than can provide the given type.
+     *
+     * @param type      The type that the provider will provider
+     * @param qualifier The qualifier to select using
+     * @return A Stream of all Providers that can provide the given typ
+     */
+    @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type, Annotation qualifier) {
         return map.entrySet().stream()
                 .filter(e -> type.isAssignableFrom(e.getKey().type()) && Objects.equals(qualifier, e.getKey().qualifier))
@@ -308,6 +316,10 @@ public class Assist implements Closeable {
         for (Scan scan : config.getClass().getAnnotationsByType(Scan.class)) {
             packageScan(scan.value(), scan.target());
         }
+
+        // auto config for ValueLookups and InstanceInterceptors configured via factory methods
+        providersFor(ValueLookup.class).map(Provider::get).forEach(this::addValueLookup);
+        providersFor(InstanceInterceptor.class).map(Provider::get).forEach(this::addInstanceInterceptor);
 
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
         for (FactoryMethodProvider eagerFactory : eagerFactories) {

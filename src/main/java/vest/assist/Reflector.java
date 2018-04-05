@@ -3,11 +3,22 @@ package vest.assist;
 import javax.inject.Qualifier;
 import javax.inject.Scope;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Manages basic reflection tasks of dependency injection. Uses an internal cache object to speed up usage.
@@ -121,8 +132,8 @@ public class Reflector {
     /**
      * @return A stream of all fields defined for the reflected type; includes all access levels, inherited, and static fields
      */
-    public Stream<Field> fields() {
-        return fields.stream();
+    public List<Field> fields() {
+        return fields;
     }
 
     /**
@@ -132,7 +143,7 @@ public class Reflector {
      * @param action         The action to perform, will be passed the annotation instance and field
      */
     public <A extends Annotation> Reflector forAnnotatedFields(Class<A> annotationType, BiConsumer<A, Field> action) {
-        fields().filter(field -> field.isAnnotationPresent(annotationType))
+        fields.stream().filter(field -> field.isAnnotationPresent(annotationType))
                 .forEach(field -> {
                     if (!field.isAccessible()) {
                         field.setAccessible(true);
@@ -146,8 +157,8 @@ public class Reflector {
      * @return A stream of all methods defined for the reflected type; includes all access levels, static, inherited, and lambda
      * generated methods
      */
-    public Stream<Method> methods() {
-        return methods.stream();
+    public List<Method> methods() {
+        return methods;
     }
 
     public <A extends Annotation> List<Method> methodsWithAnnotation(Class<A> annotationType) {
@@ -161,7 +172,7 @@ public class Reflector {
      * @param action         The action to perform, will be passed the annotation instance and method
      */
     public <A extends Annotation> Reflector forAnnotatedMethods(Class<A> annotationType, BiConsumer<A, Method> action) {
-        methods().filter(method -> method.isAnnotationPresent(annotationType))
+        methods.stream().filter(method -> method.isAnnotationPresent(annotationType))
                 .forEach(method -> {
                     if (!method.isAccessible()) {
                         method.setAccessible(true);
