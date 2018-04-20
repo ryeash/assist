@@ -93,6 +93,18 @@ public class Args {
     /**
      * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") => "dev"
      *
+     * @param flag     The flag to get the value for
+     * @param fallback The fallback value to use
+     * @return The value of the flag, or the fallback if it's not present
+     */
+    public String flagValue(String flag, String fallback) {
+        String value = flagValue(flag);
+        return value != null ? value : fallback;
+    }
+
+    /**
+     * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") => "dev"
+     *
      * @param flag The flag to get the value for
      * @return The value of the flag, or null if it's not present
      */
@@ -122,6 +134,19 @@ public class Args {
             }
         }
         return false;
+    }
+
+    /**
+     * Look for the value of a verbose flag,
+     * for example: args like "--properties=myprops.props", verboseFlagValue("properties") => "myprops.props".
+     *
+     * @param flag     The flag to get the value for
+     * @param fallback The fallback value to use
+     * @return The value of the flag, or the fallback if it's not present
+     */
+    public String verboseFlagValue(String flag, String fallback) {
+        String value = verboseFlagValue(flag);
+        return value != null ? value : fallback;
     }
 
     /**

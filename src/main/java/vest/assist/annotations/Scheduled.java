@@ -20,6 +20,8 @@ import java.util.concurrent.TimeUnit;
 @Documented
 public @interface Scheduled {
 
+    String name() default "scheduled-task";
+
     /**
      * The delay before first execution (or only execution if type
      * is set to {@link RunType#ONCE}).

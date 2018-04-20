@@ -31,11 +31,15 @@ public class BootConfig extends AppConfig {
         Assert.assertFalse(args.flag("f"));
 
         Assert.assertEquals(args.flagValue("e"), "extra");
+        Assert.assertEquals(args.flagValue("e", "fallback"), "extra");
+        Assert.assertEquals(args.flagValue("u", "fallback"), "fallback");
 
         Assert.assertTrue(args.verboseFlag("debug"));
         Assert.assertFalse(args.verboseFlag("info"));
 
         Assert.assertEquals(args.verboseFlagValue("withValue"), "something");
+        Assert.assertEquals(args.verboseFlagValue("withValue", "fallback"), "something");
+        Assert.assertEquals(args.verboseFlagValue("u", "fallback"), "fallback");
         Assert.assertNull(args.verboseFlagValue("unknown"));
         Assert.assertNull(args.verboseFlagValue("debug"));
 
