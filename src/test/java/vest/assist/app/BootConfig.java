@@ -19,10 +19,11 @@ public class BootConfig extends AppConfig {
 
     @Inject
     public void boot(Assist assist, Args args) {
-        // validation expects the arguments: BootConfig -e extra --debug --withValue=something
+        // validation expects the arguments: vest.assist.app.BootConfig -e extra --debug --withValue=something
         log.info("I'm the boot method");
         Assert.assertNotNull(assist);
         log.info("{}", args);
+        Assert.assertEquals(args.length(), 5);
 
         Assert.assertEquals(args.first(), "vest.assist.app.BootConfig");
 
@@ -39,6 +40,12 @@ public class BootConfig extends AppConfig {
         Assert.assertNull(args.verboseFlagValue("debug"));
 
         Assert.assertTrue(args.contains("-e"));
+
+        Assert.assertEquals(args.first(), "vest.assist.app.BootConfig");
+        Assert.assertEquals(args.second(), "-e");
+        Assert.assertEquals(args.third(), "extra");
+        Assert.assertEquals(args.fourth(), "--debug");
+        Assert.assertEquals(args.fifth(), "--withValue=something");
 
     }
 }

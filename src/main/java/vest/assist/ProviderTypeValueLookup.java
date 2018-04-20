@@ -60,7 +60,7 @@ public final class ProviderTypeValueLookup implements ValueLookup {
         return 10000;
     }
 
-    private static String detailString(AnnotatedElement annotatedElement) {
+    public static String detailString(AnnotatedElement annotatedElement) {
         if (annotatedElement instanceof Field) {
             Field f = (Field) annotatedElement;
             return "Field{"

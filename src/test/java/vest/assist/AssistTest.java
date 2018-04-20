@@ -6,6 +6,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import vest.assist.app.AppConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.Coosie;
@@ -21,6 +22,7 @@ import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCResourceInjection;
+import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
@@ -70,7 +72,7 @@ public class AssistTest extends Assert {
 
     @Test
     public void testBasicMethodProvider() {
-        InputStream is = assist.instance(InputStream.class);
+        InputStream is = assist.instance(InputStream.class.getCanonicalName());
         assertNotNull(is);
         assertEquals(is.getClass(), ByteArrayInputStream.class);
     }
@@ -320,5 +322,32 @@ public class AssistTest extends Assert {
     public void resourceInjectionTest() {
         TCResourceInjection instance = assist.instance(TCResourceInjection.class);
         assertNotNull(instance.fieldInjected);
+    }
+
+    @Test
+    public void scheduledTest() {
+        TCScheduledMethods sched = assist.instance(TCScheduledMethods.class);
+        delay(500);
+        assertEquals(sched.runOnceCount, 1);
+        assertEquals(sched.fixedDelayCount, 10);
+        assertEquals(sched.fixedRateCount, 10);
+    }
+
+    @Test
+    public void stringifyTest() {
+        Reflector reflector = Reflector.of(TCCollectionInjection.class);
+
+        reflector.fields().stream()
+                .limit(1)
+                .forEach(f -> log.info(ProviderTypeValueLookup.detailString(f)));
+
+        reflector.methods().stream()
+                .limit(1)
+                .forEach(m -> {
+                    log.info(ProviderTypeValueLookup.detailString(m));
+                    log.info(ProviderTypeValueLookup.detailString(m.getParameters()[0]));
+                });
+
+        log.info(ProviderTypeValueLookup.detailString(AppConfig.class));
     }
 }
