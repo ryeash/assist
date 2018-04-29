@@ -8,7 +8,6 @@ import vest.assist.Reflector;
 import vest.assist.annotations.Scheduled;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.ScheduledExecutorService;
@@ -47,8 +46,8 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         ScheduledFuture<?> future;
         switch (scheduled.type()) {
             case ONCE:
-                if (scheduled.delay() < 0) {
-                    throw new RuntimeException("invalid delay: must be greater than or equal to zero for run type " + scheduled.type());
+                if (scheduled.delay() <= 0) {
+                    throw new RuntimeException("invalid delay: must be greater than zero for run type " + scheduled.type());
                 }
                 future = scheduledExecutorService.schedule(runnable, scheduled.delay(), scheduled.unit());
                 break;
@@ -110,15 +109,15 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
 
         @Override
         public void run() {
-            Object instance = instanceRef.get();
-            if (instance != null) {
-                try {
+            try {
+                Object instance = instanceRef.get();
+                if (instance != null) {
                     method.invoke(instance, assist.getParameterValues(parameters));
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    log.error("error running scheduled task [{}]", scheduled.name(), e);
+                } else if (futureHandle != null) {
+                    futureHandle.cancel(false);
                 }
-            } else if (futureHandle != null) {
-                futureHandle.cancel(false);
+            } catch (Throwable e) {
+                log.error("error running scheduled task [{}]", scheduled.name(), e);
             }
         }
 
