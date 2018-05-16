@@ -25,9 +25,4 @@ public class SingletonScopeProvider<T> implements ScopeProvider<T> {
         }
         return value;
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName();
-    }
 }

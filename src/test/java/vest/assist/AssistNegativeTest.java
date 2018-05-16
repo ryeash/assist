@@ -7,7 +7,9 @@ import vest.assist.annotations.Factory;
 import vest.assist.app.Teapot;
 import vest.assist.provider.AdHocProvider;
 
+import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.List;
 import java.util.Set;
 
 public class AssistNegativeTest extends Assert {
@@ -48,5 +50,49 @@ public class AssistNegativeTest extends Assert {
             public void voidFactory() {
             }
         });
+    }
+
+    public static class ExceptionMethod {
+        @Inject
+        public void throwsException() {
+            throw new IllegalArgumentException("I'm supposed to do this");
+        }
+    }
+
+    @Test(expectedExceptions = RuntimeException.class)
+    public void injectMethodException() {
+        assist.instance(ExceptionMethod.class);
+    }
+
+    @Test
+    public void badMethodFactory() {
+        Assist a = new Assist();
+        a.addConfig(new Object() {
+
+            @Factory
+            public String nullFactory() {
+                return null;
+            }
+
+            @Factory
+            public Integer errorFactory() {
+                throw new IllegalArgumentException("bad factory");
+            }
+        });
+
+        assertThrows(NullPointerException.class, () -> a.instance(String.class));
+        assertThrows(RuntimeException.class, () -> a.instance(Integer.class));
+    }
+
+    public static class AbhorrentConstructor {
+        @Inject
+        public AbhorrentConstructor(List stuff){
+
+        }
+    }
+
+    @Test(expectedExceptions = RuntimeException.class)
+    public void badConstructorArg(){
+        assist.instance(AbhorrentConstructor.class);
     }
 }

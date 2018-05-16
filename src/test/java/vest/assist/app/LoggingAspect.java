@@ -2,6 +2,7 @@ package vest.assist.app;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 import vest.assist.aop.Aspect;
 import vest.assist.aop.Invocation;
 
@@ -27,6 +28,10 @@ public class LoggingAspect extends Aspect {
         log.info("arguments {}", invocation.getArgCount());
         log.info("args {}", invocation.getArgs());
         log.info("instance {}", invocation.getInstance());
+        invocation.setArgs(invocation.getArgs());
+        Assert.assertThrows(IllegalArgumentException.class, () -> invocation.setArgs(new Object[]{1, 2, 3, 4, 5}));
+        invocation.setInstance(invocation.getInstance());
+        invocation.setMethod(invocation.getMethod());
         if (invocation.getArgCount() > 0) {
             log.info("arg0 {}", invocation.getArg(0));
         }

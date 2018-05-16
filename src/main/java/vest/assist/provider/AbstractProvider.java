@@ -32,10 +32,6 @@ public abstract class AbstractProvider<T> implements Provider<T> {
         }
     }
 
-    public Class<T> type() {
-        return type;
-    }
-
     public Annotation qualifier() {
         return qualifier;
     }

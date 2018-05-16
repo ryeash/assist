@@ -3,7 +3,7 @@ package vest.assist;
 import java.lang.annotation.Annotation;
 import java.util.Objects;
 
-public final class ClassQualifier implements Comparable<ClassQualifier> {
+public final class ClassQualifier {
     final Class type;
     final Annotation qualifier;
 
@@ -36,10 +36,5 @@ public final class ClassQualifier implements Comparable<ClassQualifier> {
     @Override
     public int hashCode() {
         return Objects.hash(type, qualifier);
-    }
-
-    @Override
-    public int compareTo(ClassQualifier o) {
-        return String.CASE_INSENSITIVE_ORDER.compare(type.getCanonicalName(), o.type.getCanonicalName());
     }
 }

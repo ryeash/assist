@@ -71,7 +71,8 @@ public class Invocation {
      * Set the arguments that will be used to invoke the underlying method
      */
     public void setArgs(Object[] args) {
-        if (args.length != method.getParameterCount()) {
+        int length = args != null ? args.length : 0;
+        if (length != method.getParameterCount()) {
             throw new IllegalArgumentException("wrong number of parameters; expected" + method.getParameterCount() + " given " + args.length);
         }
         this.args = args;

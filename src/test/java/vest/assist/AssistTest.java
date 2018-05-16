@@ -28,6 +28,7 @@ import vest.assist.app.Teapot;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -357,6 +358,19 @@ public class AssistTest extends Assert {
                 .anyMatch(c -> c.getSimpleName().equals("CoffeeMaker")));
         assertTrue(PackageScanner.scan("org.slf4j")
                 .anyMatch(c -> c.getSimpleName().equals("Logger")));
+    }
+
+    @Test
+    public void reflectorTest() {
+        Reflector r = Reflector.of(AppConfig.class);
+        assertEquals(r.type(), AppConfig.class);
+        assertEquals(Reflector.of(Teapot.class).scope().annotationType(), Singleton.class);
+        assertEquals(Reflector.of(Keurig.class).qualifier().annotationType(), Named.class);
+        assertNull(r.scope());
+        log.info(r.toString());
+        assertEquals(Reflector.of(AppConfig.class), r);
+        Reflector.clear();
+        assertNotEquals(Reflector.of(AppConfig.class), r);
     }
 
 }

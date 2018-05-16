@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  * <br/>
  * Additionally, has a main method that can be used to quickly bootstrap and start (in conjunction with an
  * application configuration class) an application.
- * Example: <code>java -cp ... Assist your.app.Config [additional parameters]</code>
+ * Example: <code>java -cp ... vest.assist.Assist your.app.Config [additional parameters]</code>
  */
 public class Assist implements Closeable {
 
@@ -52,7 +52,7 @@ public class Assist implements Closeable {
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("error: must provide the fully qualified application configuration class as the first argument");
-            System.out.println("ex: java -cp ... Assist my.org.AppConfig [additional params]");
+            System.out.println("ex: java -cp ... vest.assist.Assist my.org.AppConfig [additional params]");
             System.exit(1);
         }
         Assist assist = new Assist();

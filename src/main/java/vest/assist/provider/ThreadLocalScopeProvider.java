@@ -19,9 +19,4 @@ public class ThreadLocalScopeProvider<T> implements ScopeProvider<T> {
         }
         return threadLocal.get();
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName();
-    }
 }
