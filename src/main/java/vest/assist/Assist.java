@@ -294,22 +294,24 @@ public class Assist implements Closeable {
         Reflector reflector = Reflector.of(config);
 
         List<FactoryMethodProvider> eagerFactories = new LinkedList<>();
-        for (Method method : reflector.methodsWithAnnotation(Factory.class)) {
-            Class<?> returnType = method.getReturnType();
-            if (returnType == Void.TYPE) {
-                throw new IllegalArgumentException(config.getClass().getSimpleName() + ": factory methods may not return void: " + method);
-            }
+        for (Method method : reflector.methods()) {
+            if (method.isAnnotationPresent(Factory.class)) {
+                Class<?> returnType = method.getReturnType();
+                if (returnType == Void.TYPE) {
+                    throw new IllegalArgumentException(config.getClass().getSimpleName() + ": factory methods may not return void: " + method);
+                }
 
-            FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
+                FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
 
-            log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), factory);
-            setProvider(method.getReturnType(), factory.qualifier(), factory);
-            if (factory.qualifier() != null && factory.isPrimary()) {
-                log.info("\\- will be added as primary provider");
-                setProvider(method.getReturnType(), null, factory);
-            }
-            if (factory.isEager()) {
-                eagerFactories.add(factory);
+                log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), factory);
+                setProvider(method.getReturnType(), factory.qualifier(), factory);
+                if (factory.qualifier() != null && factory.isPrimary()) {
+                    log.info("\\- will be added as primary provider");
+                    setProvider(method.getReturnType(), null, factory);
+                }
+                if (factory.isEager()) {
+                    eagerFactories.add(factory);
+                }
             }
         }
 

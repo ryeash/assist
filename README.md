@@ -94,9 +94,9 @@ public class AppConfig {
     @Factory
     @Singleton
     @Named("hers")
-    public CoffeMaker keurigFactory(){
+    public CoffeMaker pourOverFactory(){
         // assuming you have another implementation of the CoffeeMaker
-        return new Keurig();
+        return new PourOver();
     }
 }
 ```
@@ -255,21 +255,21 @@ TimingAspect:post
 LoggingAspect:post
 ```
 
-Assist uses java.lang.reflect.Proxy class to join the aspect classes with the interfaces and as such the @Aspects
+Assist uses `java.lang.reflect.Proxy` to join the aspect classes with the provided types and as such the @Aspects
 annotation is only usable on methods that return an interface type.
 
 ### Explicit Implementation Definition
 
-It is possible (and recommended with simple application architectures) to define the implementation of interfaces/abstract
+It is possible to define the implementation of interfaces/abstract
 classes directly, rather than using an application configuration class.
 ```java
 Assist assist = new Assist();
-// this declares that for the CoffeeMaker interface, we want to use the Keurig class.
-assist.addImplementingClass(CoffeeMaker.class, Keurig.class);
+// this declares that for the CoffeeMaker interface, we want to use the PourOver class.
+assist.addImplementingClass(CoffeeMaker.class, PourOver.class);
 // we now have a provider for CoffeeMaker
 assert assist.hasProvider(CoffeeMaker.class);
-// and as expected when we get a CoffeeMaker instance, it's a Keurig
-assert assist.instance(CoffeeMaker.class).getClass() == Keurig.class;
+// and as expected when we get a CoffeeMaker instance, it's a PourOver
+assert assist.instance(CoffeeMaker.class).getClass() == PourOver.class;
 ```
 
 ### Shutdown Container

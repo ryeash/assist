@@ -188,7 +188,7 @@ public class AssistTest extends Assert {
         Child c = assist.instance(Child.class);
         assertEquals(c.getI(), -1);
         assertEquals(c.over, "child");
-        assertEquals(c.noInject, null);
+        assertNull(c.noInject);
     }
 
     @Test
@@ -269,7 +269,7 @@ public class AssistTest extends Assert {
 
         // make sure scoping still works
         CoffeeMaker aspectAgain = assist.instance(CoffeeMaker.class, "aspect2");
-        assertTrue(aspect2 == aspectAgain);
+        assertSame(aspect2, aspectAgain);
         result = aspectAgain.brew();
         assertEquals(result, "french timed");
 
@@ -311,11 +311,11 @@ public class AssistTest extends Assert {
     public void multipleDependenciesSatisfiedByOneClass() {
         DAO1 dao1 = assist.instance(DAO1.class);
         assertNotNull(dao1);
-        assertTrue(dao1.getClass() == OneClassForMultipleDependencies.class);
+        assertSame(dao1.getClass(), OneClassForMultipleDependencies.class);
 
         DAO2 dao2 = assist.instance(DAO2.class);
         assertNotNull(dao2);
-        assertTrue(dao2.getClass() == OneClassForMultipleDependencies.class);
+        assertSame(dao2.getClass(), OneClassForMultipleDependencies.class);
     }
 
     @Test
@@ -350,4 +350,13 @@ public class AssistTest extends Assert {
 
         log.info(ProviderTypeValueLookup.detailString(AppConfig.class));
     }
+
+    @Test
+    public void scannerTest() {
+        assertTrue(PackageScanner.scan("vest.assist.app")
+                .anyMatch(c -> c.getSimpleName().equals("CoffeeMaker")));
+        assertTrue(PackageScanner.scan("org.slf4j")
+                .anyMatch(c -> c.getSimpleName().equals("Logger")));
+    }
+
 }

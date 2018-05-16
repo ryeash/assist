@@ -45,7 +45,7 @@ public @interface Scheduled {
 
     enum RunType {
         /**
-         * Run the method once and the configured delay.
+         * Run the method once after the configured delay.
          * Requires the delay attribute be >=0.
          * Maps to {@link java.util.concurrent.ScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
          */

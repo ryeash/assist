@@ -1,13 +1,19 @@
 package vest.assist.provider;
 
+import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Implementation of the {@link InstanceInterceptor} that tracks closable objects in a {@link WeakHashMap}
+ * so that they can be closed when {@link Assist#close()} is called.
+ */
 public class ShutdownContainer implements InstanceInterceptor, AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -30,15 +36,19 @@ public class ShutdownContainer implements InstanceInterceptor, AutoCloseable {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            Iterator<AutoCloseable> it = cleanupObjects.iterator();
-            while (it.hasNext()) {
-                AutoCloseable o = it.next();
-                it.remove();
-                try {
-                    o.close();
-                } catch (Throwable e) {
-                    // ignored
-                }
+            cleanupObjects.stream()
+                    .parallel()
+                    .forEach(ShutdownContainer::closeQuietly);
+            cleanupObjects.clear();
+        }
+    }
+
+    private static void closeQuietly(AutoCloseable autoCloseable) {
+        if (autoCloseable != null) {
+            try {
+                autoCloseable.close();
+            } catch (Exception e) {
+                // ignored
             }
         }
     }

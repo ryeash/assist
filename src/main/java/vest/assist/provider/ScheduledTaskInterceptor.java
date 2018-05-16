@@ -14,7 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * Interceptor that schedules methods annotated with {@link Scheduled} using the default (unqualified)
+ * Interceptor that schedules methods annotated with {@link Scheduled} using the primary (unqualified)
  * {@link ScheduledExecutorService} that is made available as a provider via the Assist instance.
  * The scheduled tasks that are created under the covers use a WeakReference to the intercepted
  * object instance to allow the instance to be garbage collected. In the case where the reference is GC'd,

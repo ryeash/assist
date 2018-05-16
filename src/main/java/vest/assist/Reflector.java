@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * Manages basic reflection tasks of dependency injection. Uses an internal cache object to speed up usage.
+ * Manages basic reflection tasks of dependency injection. Caches instances to speed up usage.
  */
 public class Reflector {
 
@@ -85,8 +85,7 @@ public class Reflector {
         while (temp != null && temp != Object.class) {
             typeHierarchy.add(0, temp);
             Collections.addAll(interfaces, temp.getInterfaces());
-
-            typeFields.addAll(Arrays.asList(temp.getDeclaredFields()));
+            Collections.addAll(typeFields, temp.getDeclaredFields());
 
             for (Method method : temp.getDeclaredMethods()) {
                 if (methodTracker.add(new UniqueMethod(method))) {
@@ -137,49 +136,11 @@ public class Reflector {
     }
 
     /**
-     * Perform the given action for each field that has the given annotation.
-     *
-     * @param annotationType The annotation to use to select fields
-     * @param action         The action to perform, will be passed the annotation instance and field
-     */
-    public <A extends Annotation> Reflector forAnnotatedFields(Class<A> annotationType, BiConsumer<A, Field> action) {
-        fields.stream().filter(field -> field.isAnnotationPresent(annotationType))
-                .forEach(field -> {
-                    if (!field.isAccessible()) {
-                        field.setAccessible(true);
-                    }
-                    action.accept(field.getAnnotation(annotationType), field);
-                });
-        return this;
-    }
-
-    /**
      * @return A stream of all methods defined for the reflected type; includes all access levels, static, inherited, and lambda
      * generated methods
      */
     public List<Method> methods() {
         return methods;
-    }
-
-    public <A extends Annotation> List<Method> methodsWithAnnotation(Class<A> annotationType) {
-        return methods.stream().filter(m -> m.isAnnotationPresent(annotationType)).collect(Collectors.toList());
-    }
-
-    /**
-     * Perform the given action for each method that has the given annotation.
-     *
-     * @param annotationType The annotation to use to select methods
-     * @param action         The action to perform, will be passed the annotation instance and method
-     */
-    public <A extends Annotation> Reflector forAnnotatedMethods(Class<A> annotationType, BiConsumer<A, Method> action) {
-        methods.stream().filter(method -> method.isAnnotationPresent(annotationType))
-                .forEach(method -> {
-                    if (!method.isAccessible()) {
-                        method.setAccessible(true);
-                    }
-                    action.accept(method.getAnnotation(annotationType), method);
-                });
-        return this;
     }
 
     @Override

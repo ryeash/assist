@@ -81,7 +81,7 @@ public class Invocation {
      * Get the number of arguments passed into the method when it was invoked
      */
     public int getArgCount() {
-        return args.length;
+        return args != null ? args.length : 0;
     }
 
     /**
