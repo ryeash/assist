@@ -6,7 +6,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import vest.assist.app.AppConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.Coosie;
@@ -28,7 +27,6 @@ import vest.assist.app.Teapot;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,7 +39,7 @@ import java.util.stream.IntStream;
 
 public class AssistTest extends Assert {
 
-    private static Logger log = LoggerFactory.getLogger(AssistTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AssistTest.class);
 
     public void delay(long millis) {
         try {
@@ -119,12 +117,6 @@ public class AssistTest extends Assert {
 
         assertTrue(assist.hasProvider(CoffeeMaker.class, "keurig"));
         assertFalse(assist.hasProvider(CoffeeMaker.class, "smash"));
-    }
-
-    @Test
-    public void testQualifiers() {
-        CoffeeMaker cm = assist.instance(CoffeeMaker.class);
-        assertEquals(cm.brew(), "french");
     }
 
     @Test
@@ -333,44 +325,4 @@ public class AssistTest extends Assert {
         assertEquals(sched.fixedDelayCount, 10);
         assertEquals(sched.fixedRateCount, 10);
     }
-
-    @Test
-    public void stringifyTest() {
-        Reflector reflector = Reflector.of(TCCollectionInjection.class);
-
-        reflector.fields().stream()
-                .limit(1)
-                .forEach(f -> log.info(ProviderTypeValueLookup.detailString(f)));
-
-        reflector.methods().stream()
-                .limit(1)
-                .forEach(m -> {
-                    log.info(ProviderTypeValueLookup.detailString(m));
-                    log.info(ProviderTypeValueLookup.detailString(m.getParameters()[0]));
-                });
-
-        log.info(ProviderTypeValueLookup.detailString(AppConfig.class));
-    }
-
-    @Test
-    public void scannerTest() {
-        assertTrue(PackageScanner.scan("vest.assist.app")
-                .anyMatch(c -> c.getSimpleName().equals("CoffeeMaker")));
-        assertTrue(PackageScanner.scan("org.slf4j")
-                .anyMatch(c -> c.getSimpleName().equals("Logger")));
-    }
-
-    @Test
-    public void reflectorTest() {
-        Reflector r = Reflector.of(AppConfig.class);
-        assertEquals(r.type(), AppConfig.class);
-        assertEquals(Reflector.of(Teapot.class).scope().annotationType(), Singleton.class);
-        assertEquals(Reflector.of(Keurig.class).qualifier().annotationType(), Named.class);
-        assertNull(r.scope());
-        log.info(r.toString());
-        assertEquals(Reflector.of(AppConfig.class), r);
-        Reflector.clear();
-        assertNotEquals(Reflector.of(AppConfig.class), r);
-    }
-
 }

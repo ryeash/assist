@@ -20,7 +20,7 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     private final Object instance;
 
     private final Factory factory;
-    private Class<? extends Aspect>[] aspects;
+    private final Class<? extends Aspect>[] aspects;
 
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {

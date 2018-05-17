@@ -3,7 +3,9 @@ package vest.assist;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
+import vest.assist.app.LoggingAspect;
 import vest.assist.app.Teapot;
 import vest.assist.provider.AdHocProvider;
 
@@ -86,13 +88,26 @@ public class AssistNegativeTest extends Assert {
 
     public static class AbhorrentConstructor {
         @Inject
-        public AbhorrentConstructor(List stuff){
+        public AbhorrentConstructor(List stuff) {
 
         }
     }
 
     @Test(expectedExceptions = RuntimeException.class)
-    public void badConstructorArg(){
+    public void badConstructorArg() {
         assist.instance(AbhorrentConstructor.class);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void illegalAspectUsage() {
+        Assist a = new Assist();
+        a.addConfig(new Object() {
+            @Factory
+            @Aspects(LoggingAspect.class)
+            public String toastFactory() {
+                return "toast";
+            }
+        });
+        a.instance(String.class);
     }
 }

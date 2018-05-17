@@ -10,7 +10,7 @@ import javax.inject.Inject;
 
 public class BootConfig extends AppConfig {
 
-    private static Logger log = LoggerFactory.getLogger(BootConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(BootConfig.class);
 
     @Inject
     public BootConfig(Assist assist) {
@@ -50,6 +50,10 @@ public class BootConfig extends AppConfig {
         Assert.assertEquals(args.third(), "extra");
         Assert.assertEquals(args.fourth(), "--debug");
         Assert.assertEquals(args.fifth(), "--withValue=something");
+
+        for (String arg : args) {
+            log.info(arg);
+        }
 
     }
 }

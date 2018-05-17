@@ -2,7 +2,7 @@ package vest.assist.app;
 
 public class Coosie {
 
-    String id;
+    final String id;
 
     public Coosie(String id) {
         this.id = id;

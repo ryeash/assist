@@ -2,7 +2,11 @@ package vest.assist.annotations;
 
 import vest.assist.aop.Aspect;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Marks a configuration method with the aspects that will be woven together with the returned value of the method.

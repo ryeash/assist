@@ -7,7 +7,7 @@ import javax.inject.Provider;
  */
 public class AdHocProvider<T> implements Provider<T> {
 
-    private T instance;
+    private final T instance;
 
     public AdHocProvider(T instance) {
         this.instance = instance;

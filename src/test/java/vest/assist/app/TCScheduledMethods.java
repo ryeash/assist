@@ -2,7 +2,9 @@ package vest.assist.app;
 
 import vest.assist.annotations.Scheduled;
 
-import static vest.assist.annotations.Scheduled.RunType.*;
+import static vest.assist.annotations.Scheduled.RunType.FIXED_DELAY;
+import static vest.assist.annotations.Scheduled.RunType.FIXED_RATE;
+import static vest.assist.annotations.Scheduled.RunType.ONCE;
 
 public class TCScheduledMethods {
 

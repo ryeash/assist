@@ -73,7 +73,7 @@ public class Invocation {
     public void setArgs(Object[] args) {
         int length = args != null ? args.length : 0;
         if (length != method.getParameterCount()) {
-            throw new IllegalArgumentException("wrong number of parameters; expected" + method.getParameterCount() + " given " + args.length);
+            throw new IllegalArgumentException("wrong number of parameters; expected" + method.getParameterCount() + " given " + length);
         }
         this.args = args;
     }
@@ -115,7 +115,7 @@ public class Invocation {
      * Determine if the result of this method invocation is currently an error
      */
     public boolean isError() {
-        return result != null && result instanceof Throwable;
+        return result instanceof Throwable;
     }
 
     @Override

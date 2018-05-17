@@ -7,7 +7,7 @@ import java.util.Properties;
 
 public class BaseAppConfig {
 
-    Properties properties;
+    final Properties properties;
 
     public BaseAppConfig() {
         properties = new Properties();

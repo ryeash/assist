@@ -4,10 +4,8 @@ import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

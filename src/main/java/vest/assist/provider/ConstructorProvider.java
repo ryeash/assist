@@ -21,7 +21,7 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
 
     private final Constructor<T> constructor;
     private final Parameter[] constructorParameters;
-    private Class<? extends Aspect>[] aspects;
+    private final Class<? extends Aspect>[] aspects;
 
     public ConstructorProvider(Class<T> type, Assist assist) {
         this(type, type, assist);

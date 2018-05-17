@@ -1,5 +1,6 @@
 package vest.assist;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -8,7 +9,7 @@ import java.util.stream.Stream;
 /**
  * An immutable wrapper around the arguments passed into the main method.
  */
-public class Args {
+public class Args implements Iterable<String> {
 
     public static final String FLAG = "-";
     public static final String VERBOSE_FLAG = "--";
@@ -183,5 +184,10 @@ public class Args {
     @Override
     public String toString() {
         return args.toString();
+    }
+
+    @Override
+    public Iterator<String> iterator() {
+        return args.iterator();
     }
 }

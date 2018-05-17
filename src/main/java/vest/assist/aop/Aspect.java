@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
  * any of them) will cause method execution to behave normally, i.e. no extra code executions or modification to the method
  * call.
  * <p/>
- * Implementations SHOULD be threadsafe.
+ * Implementations SHOULD be thread safe.
  */
 public abstract class Aspect implements InvocationHandler {
 

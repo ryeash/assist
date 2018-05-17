@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
-import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
+import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeProvider;
 import vest.assist.provider.ThreadLocalScopeProvider;
@@ -47,7 +47,7 @@ import java.util.stream.Stream;
  */
 public class Assist implements Closeable {
 
-    private static Logger log = LoggerFactory.getLogger(Assist.class);
+    private static final Logger log = LoggerFactory.getLogger(Assist.class);
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -222,7 +222,7 @@ public class Assist implements Closeable {
     }
 
     /**
-     * Get a steram of all providers than can provide the given type.
+     * Get a stream of all providers than can provide the given type.
      *
      * @param type      The type that the provider will provider
      * @param qualifier The qualifier to select using

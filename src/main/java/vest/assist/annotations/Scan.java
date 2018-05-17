@@ -1,7 +1,14 @@
 package vest.assist.annotations;
 
 import javax.inject.Singleton;
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * A configuration class can use this @Scan annotation to trigger a package scan that will create/inject all classes that

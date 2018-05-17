@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledFuture;
  */
 public class ScheduledTaskInterceptor implements InstanceInterceptor {
 
-    private static Logger log = LoggerFactory.getLogger(ScheduledTaskInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(ScheduledTaskInterceptor.class);
 
     private final Assist assist;
 
@@ -33,8 +33,9 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
     @Override
     public void intercept(Object instance) {
         for (Method method : Reflector.of(instance).methods()) {
-            if (method.isAnnotationPresent(Scheduled.class)) {
-                schedule(method.getAnnotation(Scheduled.class), instance, method);
+            Scheduled scheduled = method.getAnnotation(Scheduled.class);
+            if (scheduled != null) {
+                schedule(scheduled, instance, method);
             }
         }
     }
