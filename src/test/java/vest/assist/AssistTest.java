@@ -20,6 +20,7 @@ import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
+import vest.assist.app.TCPropertyInjection;
 import vest.assist.app.TCResourceInjection;
 import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.Teapot;
@@ -32,6 +33,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -324,5 +326,15 @@ public class AssistTest extends Assert {
         assertEquals(sched.runOnceCount, 1);
         assertEquals(sched.fixedDelayCount, 10);
         assertEquals(sched.fixedRateCount, 10);
+    }
+
+    @Test
+    public void proeprtiesTest(){
+        TCPropertyInjection prop = assist.instance(TCPropertyInjection.class);
+        assertEquals(prop.getStr(), "value");
+        assertEquals(prop.bool, Boolean.TRUE);
+        assertEquals(prop.integer, 12);
+        assertEquals(prop.numbers, Arrays.asList(1D,1D,2D,3D,5D,8D,13D));
+        assertEquals(prop.demoEnum, ConfigurationTest.DemoEnum.CHARLIE);
     }
 }
