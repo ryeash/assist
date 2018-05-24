@@ -2,9 +2,11 @@ package vest.assist;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import vest.assist.annotations.Property;
 import vest.assist.conf.Builder;
 import vest.assist.conf.CachingFacade;
 import vest.assist.conf.ConfigurationFacade;
+import vest.assist.conf.DefaultConfigurationFacade;
 import vest.assist.conf.EnvironmentFacade;
 import vest.assist.conf.MacroSupportFacade;
 
@@ -12,8 +14,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -48,7 +52,6 @@ public class ConfigurationTest extends Assert {
         assertEquals(conf.get("double", Double.class), 43.231);
         assertEquals(conf.get("boolean", Boolean.class), Boolean.TRUE);
         assertEquals(conf.get("enum", DemoEnum.class), DemoEnum.CHARLIE);
-//        DemoEnum.valueOf()
 
         assertEquals(conf.getList("string.list"), Arrays.asList("one", "two", "three"));
         assertEquals(conf.getSet("string.list"), new HashSet<>(Arrays.asList("one", "two", "three")));
@@ -147,5 +150,42 @@ public class ConfigurationTest extends Assert {
         assertEquals(cache.get("name"), "value");
         cache.reload();
         assertEquals(cache.get("name"), "different value");
+    }
+
+    @Test
+    public void changingDelimiter() {
+        Map<String, String> map = new HashMap<>();
+        map.put("list1", "a,b,c,d,e,f");
+        map.put("list2", "a|b|c|d|e|f");
+
+        DefaultConfigurationFacade conf = new DefaultConfigurationFacade(Collections.singletonList(map::get));
+        conf.setListDelimiter(',');
+
+        List<String> expected = Arrays.asList("a", "b", "c", "d", "e", "f");
+        assertEquals(conf.getList("list1"), expected);
+
+        conf.setListDelimiter('|');
+        assertEquals(conf.getList("list2"), expected);
+    }
+
+
+
+    @Test
+    public void required() {
+        Assist assist = new Assist();
+        DefaultConfigurationFacade conf = new DefaultConfigurationFacade(Collections.emptyList());
+        assist.setSingleton(ConfigurationFacade.class, conf);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            assist.inject(new Object() {
+                @Property(value = "missing")
+                private String notFound;
+            });
+        });
+
+        assist.inject(new Object() {
+            @Property(value = "missing", required = false)
+            private String notFound;
+        });
     }
 }

@@ -85,8 +85,8 @@ public class AppConfig extends BaseAppConfig {
 
     @Factory
     @Singleton
-    public OneClassForMultipleDependencies multipleDeps() {
-        return new OneClassForMultipleDependencies();
+    public TCMultipleDependenciesSatisfied multipleDeps() {
+        return new TCMultipleDependenciesSatisfied();
     }
 
     @Factory

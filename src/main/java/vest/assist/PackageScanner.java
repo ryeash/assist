@@ -51,7 +51,7 @@ public class PackageScanner {
                     try {
                         return classLoader.loadClass(className);
                     } catch (ClassNotFoundException e) {
-                        throw new RuntimeException("un-scannable class path", e);
+                        throw new RuntimeException("unscannable class path", e);
                     }
                 });
     }

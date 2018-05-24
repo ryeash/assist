@@ -19,16 +19,18 @@ import java.util.stream.Stream;
 public class DefaultConfigurationFacade implements ConfigurationFacade {
 
     private static final List<String> CONVERSION_METHOD_NAMES = Arrays.asList("valueOf", "forString", "forName");
-    private static final char LIST_DELIMITER = ',';
 
     private final List<ConfigurationSource> sources;
     private final Map<Class, Function<String, Object>> converterCache;
+    private char listDelimiter = ',';
 
     public DefaultConfigurationFacade(List<ConfigurationSource> sources) {
         this.sources = sources;
         this.converterCache = new HashMap<>();
         // default converters
         this.converterCache.put(String.class, str -> str);
+        this.converterCache.put(CharSequence.class, str -> str);
+        this.converterCache.put(StringBuilder.class, StringBuilder::new);
         this.converterCache.put(Byte.class, Byte::valueOf);
         this.converterCache.put(Byte.TYPE, Byte::valueOf);
         this.converterCache.put(Short.class, Short::valueOf);
@@ -45,6 +47,10 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         this.converterCache.put(Boolean.TYPE, Boolean::valueOf);
         this.converterCache.put(BigInteger.class, BigInteger::new);
         this.converterCache.put(BigDecimal.class, BigDecimal::new);
+    }
+
+    public void setListDelimiter(char delimiter) {
+        this.listDelimiter = delimiter;
     }
 
     @Override
@@ -65,7 +71,7 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         if (value == null) {
             return fallback;
         } else {
-            return split(get(propertyName), LIST_DELIMITER)
+            return split(get(propertyName), listDelimiter)
                     .stream()
                     .map(getConverter(genericType));
         }

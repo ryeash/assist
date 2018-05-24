@@ -15,7 +15,7 @@ import vest.assist.app.FrenchPress;
 import vest.assist.app.Keurig;
 import vest.assist.app.Leather;
 import vest.assist.app.Log;
-import vest.assist.app.OneClassForMultipleDependencies;
+import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
@@ -306,11 +306,11 @@ public class AssistTest extends Assert {
     public void multipleDependenciesSatisfiedByOneClass() {
         DAO1 dao1 = assist.instance(DAO1.class);
         assertNotNull(dao1);
-        assertSame(dao1.getClass(), OneClassForMultipleDependencies.class);
+        assertSame(dao1.getClass(), TCMultipleDependenciesSatisfied.class);
 
         DAO2 dao2 = assist.instance(DAO2.class);
         assertNotNull(dao2);
-        assertSame(dao2.getClass(), OneClassForMultipleDependencies.class);
+        assertSame(dao2.getClass(), TCMultipleDependenciesSatisfied.class);
     }
 
     @Test
@@ -329,7 +329,7 @@ public class AssistTest extends Assert {
     }
 
     @Test
-    public void proeprtiesTest(){
+    public void propertiesTest(){
         TCPropertyInjection prop = assist.instance(TCPropertyInjection.class);
         assertEquals(prop.getStr(), "value");
         assertEquals(prop.bool, Boolean.TRUE);

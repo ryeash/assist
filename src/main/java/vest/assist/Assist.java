@@ -83,6 +83,10 @@ public class Assist implements Closeable {
         addScopeProvider(ThreadLocal.class, ThreadLocalScopeProvider.class);
         addValueLookup(new ProviderTypeValueLookup(this));
 
+        PropertyInjector propertyInjector = new PropertyInjector(this);
+        addInstanceInterceptor(propertyInjector);
+        addValueLookup(propertyInjector);
+
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);
 

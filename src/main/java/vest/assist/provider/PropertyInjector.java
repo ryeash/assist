@@ -15,24 +15,30 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Responsible for injecting Fields and Parameter values annotated with the {@link Property} annotation.
+ * Responsible for injecting Field and Parameter values annotated with {@link Property}.
  */
 public class PropertyInjector implements InstanceInterceptor, ValueLookup {
 
-    private final ConfigurationFacade conf;
+    private final Assist assist;
+    private ConfigurationFacade conf;
 
     public PropertyInjector(Assist assist) {
-        this.conf = assist.instance(ConfigurationFacade.class);
+        this.assist = assist;
     }
 
     @Override
     public void intercept(Object instance) {
         for (Field field : Reflector.of(instance).fields()) {
+            // we ignore the @Inject fields because they will be lookup up used the ValueLookup part of this class
             if (field.isAnnotationPresent(Property.class) && !field.isAnnotationPresent(Inject.class)) {
+                Property prop = field.getAnnotation(Property.class);
                 try {
-                    Object value = getProperty(field.getType(), field.getGenericType(), field);
+                    Object value = getProperty(prop, field.getType(), field.getGenericType());
                     if (!field.isAccessible()) {
                         field.setAccessible(true);
+                    }
+                    if (value == null && prop.required()) {
+                        throw new IllegalArgumentException("missing property: " + prop.value() + ", for " + Reflector.detailString(field));
                     }
                     field.set(instance, value);
                 } catch (IllegalAccessException e) {
@@ -44,7 +50,16 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
 
     @Override
     public Object lookup(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
-        return getProperty(rawType, genericType, annotatedElement);
+        if (annotatedElement.isAnnotationPresent(Property.class)) {
+            Property prop = annotatedElement.getAnnotation(Property.class);
+            Object o = getProperty(prop, rawType, genericType);
+            if (o == null && prop.required()) {
+                throw new IllegalArgumentException("missing property: " + prop.value() + ", for " + Reflector.detailString(annotatedElement));
+            }
+            return o;
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -52,10 +67,9 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
         return 900;
     }
 
-    private Object getProperty(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
-        Property prop = annotatedElement.getAnnotation(Property.class);
-        if (prop == null) {
-            return null;
+    private Object getProperty(Property prop, Class<?> rawType, Type genericType) {
+        if (conf == null) {
+            conf = assist.instance(ConfigurationFacade.class);
         }
         if (List.class.isAssignableFrom(rawType)) {
             return conf.getList(prop.value(), Reflector.getParameterizedType(genericType));
