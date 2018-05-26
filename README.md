@@ -312,6 +312,9 @@ public class SomeComponent {
     }
 }
 ```
+By default, properties are required, a RuntimeException will be thrown if a value can not be found
+during injection. Individual properties can be made optional by setting required=false, e.g.:
+```@Property(value = "some.property", required = false)```
 
 
 ### Explicit Implementation Definition
