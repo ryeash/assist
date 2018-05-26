@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
-import vest.assist.conf.ConfigurationFacade;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
@@ -330,12 +329,6 @@ public class Assist implements Closeable {
         // auto config for ValueLookups and InstanceInterceptors configured via factory methods
         providersFor(ValueLookup.class).map(Provider::get).forEach(this::addValueLookup);
         providersFor(InstanceInterceptor.class).map(Provider::get).forEach(this::addInstanceInterceptor);
-
-        if (hasProvider(ConfigurationFacade.class)) {
-            PropertyInjector propertyInjector = new PropertyInjector(this);
-            addValueLookup(propertyInjector);
-            addInstanceInterceptor(propertyInjector);
-        }
 
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
         for (FactoryMethodProvider eagerFactory : eagerFactories) {
