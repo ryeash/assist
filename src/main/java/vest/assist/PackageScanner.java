@@ -21,6 +21,9 @@ public class PackageScanner {
     public static final char PACKAGE_SEPARATOR = '.';
     public static final char PATH_SEPARATOR = '/';
 
+    private PackageScanner() {
+    }
+
     /**
      * Using the current thread's ClassLoader, scan the classpath searching for all classes (recursively) under the
      * given package name.

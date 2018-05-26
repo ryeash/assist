@@ -9,6 +9,10 @@ import java.net.URL;
 import java.util.Objects;
 import java.util.Properties;
 
+/**
+ * ConfigurationSource implementation that pulls properties from a {@link Properties} instance. Loads data from a
+ * URL so it can support file, network, and classpath loading. Also supports reloading the properties file.
+ */
 public class PropertiesSource implements ConfigurationSource {
 
     private Properties properties;

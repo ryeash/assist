@@ -1,5 +1,22 @@
 package vest.assist.conf;
 
+/**
+ * A facade wrapper that adds macro filling support. Overrides {@link ConfigurationFacade#get(String)} in order to
+ * recursively fill macro values with there properties.
+ * <br/>
+ * Example:<br/>
+ * A properties file containing:<br/>
+ * <code>
+ * host = 10.0.0.1<br/>
+ * uri = http://${host}:3451<br/>
+ * </code>
+ * <br/>
+ * Getting properties with macro support enabled:<br/>
+ * <code>
+ * // the ${host} macro is auto filled by calling conf.get("host")
+ * conf.get("uri") => http://10.0.0.1:3451
+ * </code>
+ */
 public class MacroSupportFacade extends ConfigurationFacadeWrapper {
 
     private String macroOpen;

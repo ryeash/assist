@@ -16,6 +16,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * The default implementation of {@link ConfigurationFacade}. Will be used by {@link Builder} when creating
+ * facades.
+ */
 public class DefaultConfigurationFacade implements ConfigurationFacade {
 
     private static final List<String> CONVERSION_METHOD_NAMES = Arrays.asList("valueOf", "forString", "forName");
@@ -24,6 +28,11 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
     private final Map<Class, Function<String, Object>> converterCache;
     private char listDelimiter = ',';
 
+    /**
+     * Create a new instance using the given source list.
+     *
+     * @param sources The list of sources to get properties from
+     */
     public DefaultConfigurationFacade(List<ConfigurationSource> sources) {
         this.sources = sources;
         this.converterCache = new HashMap<>();
@@ -49,6 +58,12 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         this.converterCache.put(BigDecimal.class, BigDecimal::new);
     }
 
+    /**
+     * Set the delimiter character to use for collections values.
+     *
+     * @param delimiter the delimiter, e.g. ','
+     * @default ','
+     */
     public void setListDelimiter(char delimiter) {
         this.listDelimiter = delimiter;
     }
@@ -108,7 +123,7 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         throw new IllegalArgumentException("no string conversion method found for type: " + type);
     }
 
-    public static final class ExecutableConverter implements Function<String, Object> {
+    private static final class ExecutableConverter implements Function<String, Object> {
         private final Executable executable;
         private final Class<?> targetType;
 

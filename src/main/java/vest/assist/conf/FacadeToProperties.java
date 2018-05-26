@@ -2,6 +2,10 @@ package vest.assist.conf;
 
 import java.util.Properties;
 
+/**
+ * Used internally by {@link ConfigurationFacade#toProperties()} to create a {@link Properties} compatible object
+ * out of a configuration facade.
+ */
 public class FacadeToProperties extends Properties {
 
     private final ConfigurationFacade facade;

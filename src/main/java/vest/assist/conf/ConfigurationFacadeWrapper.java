@@ -6,6 +6,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * A wrapper that delegates all method calls to the facade used in the constructor.
+ */
 public class ConfigurationFacadeWrapper implements ConfigurationFacade {
 
     protected final ConfigurationFacade delegate;
