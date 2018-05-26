@@ -195,7 +195,7 @@ instantiation. If you need to search for some other annotation type, you can:
 @Scan(value = "com.my.base.package", target = Endpoint.class)
 ```
 
-### @Aspect
+### @Aspects
 Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the @Aspects annotation.
 You can, for example, add a Logging aspect to a provided instance:
 First define your aspect:
@@ -257,6 +257,62 @@ LoggingAspect:post
 
 Assist uses `java.lang.reflect.Proxy` to join the aspect classes with the provided types and as such the @Aspects
 annotation is only usable on methods that return an interface type.
+
+### @Property
+Assist has built-in property support using the @Property and ConfigurationFacade classes.
+
+To use the @Property annotation, an unqualified ConfigurationFacade must be made available for injection. For example,
+via a @Factory method in an application configuration class:
+```java
+@Factory
+@Singleton
+public ConfigurationFacade configurationFacadeFactory() {
+    // ordering of sources is relevant:
+    // sources will be polled for properties in the order they were
+    // added, and the first non-empty value from a source will be returned
+    return ConfigurationFacade.build()
+            .system() // get values from System.getProperty(...)
+            .file("../conf/app-override.properties")
+            .file("../conf/app.properties")
+            .enableEnvironments()
+            .enableCaching()
+            .enableMacros()
+            .finish();
+}
+```
+Using the @Property annotation without an available ConfigurationFacade will cause RuntimeExceptions during injection.
+
+With the ConfigurationFacade created and available, fields and parameters can be injected from configuration sources.
+```java
+@Singleton
+public class SomeComponent {
+
+    @Property("string")
+    private String str;
+    
+    @Inject // the @Inject annotation is optional when @Property is present
+    @Property("boolean")
+    public Boolean bool; // any type with a static valueOf(String) method is supported
+
+    @Property("integer")
+    public int integer;
+
+    @Property("numbers.list")
+    public List<Double> numbers; // List, Sets, SortedSets
+
+    @Inject
+    private void setProps(@Property("enum")SomeEnum someEnum){
+        // ...
+    }
+    
+    // if you just want to use the ConfigurationFacade directly
+    @Inject
+    private void configureIt(ConfigurationFacade conf){
+        // ... configure it ...
+    }
+}
+```
+
 
 ### Explicit Implementation Definition
 

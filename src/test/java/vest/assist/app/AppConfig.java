@@ -6,6 +6,7 @@ import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
+import vest.assist.conf.ConfigurationFacade;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -84,7 +85,18 @@ public class AppConfig extends BaseAppConfig {
 
     @Factory
     @Singleton
-    public OneClassForMultipleDependencies multipleDeps() {
-        return new OneClassForMultipleDependencies();
+    public TCMultipleDependenciesSatisfied multipleDeps() {
+        return new TCMultipleDependenciesSatisfied();
+    }
+
+    @Factory
+    @Singleton
+    public ConfigurationFacade configurationFacadeFactory() {
+        return ConfigurationFacade.build()
+                .classpathFile("test.conf")
+                .enableEnvironments()
+                .enableCaching()
+                .enableMacros()
+                .finish();
     }
 }

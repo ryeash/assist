@@ -3,10 +3,6 @@ package vest.assist;
 import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +46,7 @@ public final class ProviderTypeValueLookup implements ValueLookup {
     private Class getRealType(AnnotatedElement annotatedElement, Type genericType) {
         Class<?> realType = Reflector.getParameterizedType(genericType);
         if (realType == null) {
-            throw new IllegalArgumentException(genericType.getTypeName() + " was not defined with a specific type, injection is impossible for: " + detailString(annotatedElement));
+            throw new IllegalArgumentException(genericType.getTypeName() + " was not defined with a specific type, injection is impossible for: " + Reflector.detailString(annotatedElement));
         }
         return realType;
     }
@@ -58,40 +54,5 @@ public final class ProviderTypeValueLookup implements ValueLookup {
     @Override
     public int priority() {
         return 10000;
-    }
-
-    public static String detailString(AnnotatedElement annotatedElement) {
-        if (annotatedElement instanceof Field) {
-            Field f = (Field) annotatedElement;
-            return "Field{"
-                    + "name=" + f.getName()
-                    + ", type=" + f.getType().getCanonicalName()
-                    + ", declaredIn=" + f.getDeclaringClass().getCanonicalName()
-                    + '}';
-        } else if (annotatedElement instanceof Parameter) {
-            Parameter p = (Parameter) annotatedElement;
-            if (p.getDeclaringExecutable() instanceof Method) {
-                Method m = (Method) p.getDeclaringExecutable();
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", method=" + m
-                        + ", declaredIn=" + m.getDeclaringClass().getCanonicalName()
-                        + '}';
-            } else if (p.getDeclaringExecutable() instanceof Constructor) {
-                Constructor c = (Constructor) p.getDeclaringExecutable();
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", constructor=" + c
-                        + ", declaredIn=" + c.getDeclaringClass().getCanonicalName()
-                        + '}';
-            } else {
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", executable=" + p.getDeclaringExecutable()
-                        + '}';
-            }
-        } else {
-            return annotatedElement.toString();
-        }
     }
 }

@@ -9,6 +9,7 @@ import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
+import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeProvider;
@@ -80,6 +81,10 @@ public class Assist implements Closeable {
         addScopeProvider(Singleton.class, SingletonScopeProvider.class);
         addScopeProvider(ThreadLocal.class, ThreadLocalScopeProvider.class);
         addValueLookup(new ProviderTypeValueLookup(this));
+
+        PropertyInjector propertyInjector = new PropertyInjector(this);
+        addInstanceInterceptor(propertyInjector);
+        addValueLookup(propertyInjector);
 
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);

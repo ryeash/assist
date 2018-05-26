@@ -23,16 +23,16 @@ public class MiscTests extends Assert {
 
         reflector.fields().stream()
                 .limit(1)
-                .forEach(f -> log.info(ProviderTypeValueLookup.detailString(f)));
+                .forEach(f -> log.info(Reflector.detailString(f)));
 
         reflector.methods().stream()
                 .limit(1)
                 .forEach(m -> {
-                    log.info(ProviderTypeValueLookup.detailString(m));
-                    log.info(ProviderTypeValueLookup.detailString(m.getParameters()[0]));
+                    log.info(Reflector.detailString(m));
+                    log.info(Reflector.detailString(m.getParameters()[0]));
                 });
 
-        log.info(ProviderTypeValueLookup.detailString(AppConfig.class));
+        log.info(Reflector.detailString(AppConfig.class));
     }
 
     @Test

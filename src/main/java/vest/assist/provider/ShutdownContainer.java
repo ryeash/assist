@@ -45,7 +45,7 @@ public class ShutdownContainer implements InstanceInterceptor, AutoCloseable {
         if (autoCloseable != null) {
             try {
                 autoCloseable.close();
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 // ignored
             }
         }
