@@ -52,7 +52,7 @@ public class Builder {
      * @return this builder
      */
     public Builder system() {
-        return add(System::getProperty);
+        return add(new SystemProperties());
     }
 
     /**
@@ -61,7 +61,7 @@ public class Builder {
      * @return this builder
      */
     public Builder environment() {
-        return add(System::getenv);
+        return add(new EnvironmentVariables());
     }
 
     /**
@@ -104,7 +104,7 @@ public class Builder {
      * @return this builder
      */
     public Builder map(Map<String, String> map) {
-        return add(map::get);
+        return add(new MapSource(map));
     }
 
     /**
@@ -183,5 +183,48 @@ public class Builder {
             facade = new CachingFacade(facade);
         }
         return facade;
+    }
+
+    public static final class SystemProperties implements ConfigurationSource {
+        @Override
+        public String get(String propertyName) {
+            return System.getProperty(propertyName);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName();
+        }
+    }
+
+    public class EnvironmentVariables implements ConfigurationSource {
+        @Override
+        public String get(String propertyName) {
+            return System.getenv(propertyName);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName();
+        }
+    }
+
+    public class MapSource implements ConfigurationSource {
+
+        private final Map<String, String> map;
+
+        public MapSource(Map<String, String> map) {
+            this.map = map;
+        }
+
+        @Override
+        public String get(String propertyName) {
+            return map.get(propertyName);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "(" + map.getClass().getSimpleName() + ":" + map.hashCode() + ")";
+        }
     }
 }

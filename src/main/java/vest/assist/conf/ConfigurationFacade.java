@@ -3,6 +3,7 @@ package vest.assist.conf;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -52,6 +53,32 @@ public interface ConfigurationFacade extends ConfigurationSource {
             }
         }
         return null;
+    }
+
+    /**
+     * Get a trace of which ConfigurationSource will provide the value for the property. For a facade that
+     * has many sources this can be useful to see which source a property is actually coming from.
+     * The format of the returned string is implementation dependent, and, as such, is meant to be informative only.
+     *
+     * @param propertyName The name of the property to trace
+     * @return a list of trace strings, one per property source indicating whether it would return a value for
+     * the given property.
+     */
+    default List<String> trace(String propertyName) {
+        List<String> trace = new LinkedList<>();
+        boolean found = false;
+        for (ConfigurationSource source : sources()) {
+            String value = source.get(propertyName);
+            if (value == null || value.isEmpty()) {
+                trace.add("MISS: [" + source + "]");
+            } else if (!found) {
+                found = true;
+                trace.add("HIT: [" + source + "] will provide the property value: " + value);
+            } else {
+                trace.add("HIT: [" + source + "] has a value for the property, but it will not be used");
+            }
+        }
+        return trace;
     }
 
     /**

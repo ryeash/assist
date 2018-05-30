@@ -58,4 +58,9 @@ public class PropertiesSource implements ConfigurationSource {
         }
     }
 
+    @Override
+    public String toString() {
+        return "PropertiesSource(" + propertiesUrl + ")";
+    }
+
 }

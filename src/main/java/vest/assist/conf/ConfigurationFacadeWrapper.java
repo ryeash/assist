@@ -17,6 +17,10 @@ public class ConfigurationFacadeWrapper implements ConfigurationFacade {
         this.delegate = delegate;
     }
 
+    public static Builder build() {
+        return ConfigurationFacade.build();
+    }
+
     @Override
     public List<ConfigurationSource> sources() {
         return delegate.sources();
@@ -25,6 +29,11 @@ public class ConfigurationFacadeWrapper implements ConfigurationFacade {
     @Override
     public String get(String propertyName) {
         return delegate.get(propertyName);
+    }
+
+    @Override
+    public List<String> trace(String propertyName) {
+        return delegate.trace(propertyName);
     }
 
     @Override
@@ -105,5 +114,10 @@ public class ConfigurationFacadeWrapper implements ConfigurationFacade {
     @Override
     public void reload() {
         delegate.reload();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" + delegate + ")";
     }
 }

@@ -54,4 +54,9 @@ public class EnvironmentFacade extends ConfigurationFacadeWrapper {
         super.reload();
         this.environment = delegate.get(ENVIRONMENT);
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
 }

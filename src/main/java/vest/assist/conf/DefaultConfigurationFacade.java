@@ -12,8 +12,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -34,7 +36,7 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
      * @param sources The list of sources to get properties from
      */
     public DefaultConfigurationFacade(List<ConfigurationSource> sources) {
-        this.sources = sources;
+        this.sources = Objects.requireNonNull(sources);
         this.converterCache = new HashMap<>();
         // default converters
         this.converterCache.put(String.class, str -> str);
@@ -90,6 +92,13 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
                     .stream()
                     .map(getConverter(genericType));
         }
+    }
+
+    @Override
+    public String toString() {
+        return sources.stream()
+                .map(ConfigurationSource::toString)
+                .collect(Collectors.joining(", ", getClass().getSimpleName() + "[", "]"));
     }
 
     @SuppressWarnings("unchecked")
