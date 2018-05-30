@@ -43,6 +43,8 @@ public class ConfigurationTest extends Assert {
                 .toString();
 
         ConfigurationFacade conf = Builder.defaultFacade(testFile);
+        System.out.println(conf);
+
         assertEquals(conf.get("string"), "value");
         assertEquals(conf.get("missing", "miss"), "miss");
         assertEquals(conf.get("integer", Integer.class), new Integer(12));
@@ -169,7 +171,6 @@ public class ConfigurationTest extends Assert {
     }
 
 
-
     @Test
     public void required() {
         Assist assist = new Assist();
@@ -187,5 +188,26 @@ public class ConfigurationTest extends Assert {
             @Property(value = "missing", required = false)
             private String notFound;
         });
+    }
+
+    @Test
+    public void traceTest() throws IOException {
+        String testFile = Files.find(new File(".").toPath(), 3, (path, basicFileAttributes) -> path.getFileName().toString().equals("test.conf"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("error finding test config"))
+                .toString();
+
+        Map<String, String> vals = new HashMap<>();
+        vals.put("string", "the other value");
+
+        ConfigurationFacade conf = ConfigurationFacade.build()
+                .environment()
+                .system()
+                .file(testFile)
+                .map(vals)
+                .finish();
+        for (String trace : conf.trace("string")) {
+            System.out.println(trace);
+        }
     }
 }
