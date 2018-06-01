@@ -5,6 +5,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.Scheduled;
 import vest.assist.app.LoggingAspect;
 import vest.assist.app.Teapot;
 import vest.assist.provider.AdHocProvider;
@@ -109,5 +110,43 @@ public class AssistNegativeTest extends Assert {
             }
         });
         a.instance(String.class);
+    }
+
+
+    @Test
+    public void scheduleErrors() {
+        assist.inject(new Object() {
+            @Scheduled(name = "my-task", type = Scheduled.RunType.ONCE, delay = 1)
+            public void task(String thing) throws Exception {
+                throw new Exception("oh no!");
+            }
+        });
+
+        assertThrows(RuntimeException.class, () -> {
+            assist.inject(new Object() {
+                @Scheduled(type = Scheduled.RunType.ONCE, delay = -1)
+                public void task(String thing) {
+
+                }
+            });
+        });
+
+        assertThrows(RuntimeException.class, () -> {
+            assist.inject(new Object() {
+                @Scheduled(type = Scheduled.RunType.FIXED_RATE, period = -1)
+                public void task(String thing) {
+
+                }
+            });
+        });
+
+        assertThrows(RuntimeException.class, () -> {
+            assist.inject(new Object() {
+                @Scheduled(type = Scheduled.RunType.FIXED_DELAY, period = -1)
+                public void task(String thing) {
+
+                }
+            });
+        });
     }
 }

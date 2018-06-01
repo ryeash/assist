@@ -48,21 +48,21 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         switch (scheduled.type()) {
             case ONCE:
                 if (scheduled.delay() <= 0) {
-                    throw new RuntimeException("invalid delay: must be greater than zero for run type " + scheduled.type());
+                    throw new RuntimeException("invalid schedule delay: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
                 }
                 future = scheduledExecutorService.schedule(runnable, scheduled.delay(), scheduled.unit());
                 break;
             case FIXED_RATE:
                 delay = Math.max(0, scheduled.delay());
                 if (scheduled.period() <= 0) {
-                    throw new RuntimeException("invalid period: must be greater than zero for run type " + scheduled.type());
+                    throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
                 }
                 future = scheduledExecutorService.scheduleAtFixedRate(runnable, delay, scheduled.period(), scheduled.unit());
                 break;
             case FIXED_DELAY:
                 delay = Math.max(0, scheduled.delay());
                 if (scheduled.period() <= 0) {
-                    throw new RuntimeException("invalid period: must be greater than zero for run type " + scheduled.type());
+                    throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
                 }
                 future = scheduledExecutorService.scheduleWithFixedDelay(runnable, delay, scheduled.period(), scheduled.unit());
                 break;
@@ -118,7 +118,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                     futureHandle.cancel(false);
                 }
             } catch (Throwable e) {
-                log.error("error running scheduled task [{}]", scheduled.name(), e);
+                log.error("error running scheduled task [{}] [{}]", scheduled.name(), Reflector.detailString(method), e);
             }
         }
 

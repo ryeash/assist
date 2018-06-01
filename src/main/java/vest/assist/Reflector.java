@@ -194,7 +194,7 @@ public class Reflector {
             return "Field{"
                     + "name=" + f.getName()
                     + ", type=" + f.getType().getCanonicalName()
-                    + ", declaredIn=" + f.getDeclaringClass().getCanonicalName()
+                    + ", declaredIn=" + debugName(f.getDeclaringClass())
                     + '}';
         } else if (annotatedElement instanceof Parameter) {
             Parameter p = (Parameter) annotatedElement;
@@ -203,14 +203,14 @@ public class Reflector {
                 return "Parameter{"
                         + "name=" + p.getName()
                         + ", method=" + m
-                        + ", declaredIn=" + m.getDeclaringClass().getCanonicalName()
+                        + ", declaredIn=" + debugName(m.getDeclaringClass())
                         + '}';
             } else if (p.getDeclaringExecutable() instanceof Constructor) {
                 Constructor c = (Constructor) p.getDeclaringExecutable();
                 return "Parameter{"
                         + "name=" + p.getName()
                         + ", constructor=" + c
-                        + ", declaredIn=" + c.getDeclaringClass().getCanonicalName()
+                        + ", declaredIn=" + debugName(c.getDeclaringClass())
                         + '}';
             } else {
                 return "Parameter{"
@@ -218,8 +218,25 @@ public class Reflector {
                         + ", executable=" + p.getDeclaringExecutable()
                         + '}';
             }
+        } else if (annotatedElement instanceof Method) {
+            Method m = (Method) annotatedElement;
+            return "Method{"
+                    + "name=" + m.getName()
+                    + ", paramTypes=" + Arrays.toString(m.getParameterTypes())
+                    + ", declaredIn=" + debugName(m.getDeclaringClass())
+                    + '}';
         } else {
             return annotatedElement.toString();
+        }
+    }
+
+    private static String debugName(Class c) {
+        if (c.isArray()) {
+            return c.getTypeName();
+        } else if (c.getCanonicalName() != null) {
+            return c.getCanonicalName();
+        } else {
+            return c.getName();
         }
     }
 
