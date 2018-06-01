@@ -59,10 +59,10 @@ public class MiscTest extends Assert {
     @Test
     public void namedImplTest() {
         Named synthetic = new NamedImpl("pourOver");
+        log.info("{}", synthetic);
         Named real = PourOver.class.getAnnotation(Named.class);
         assertEquals(synthetic.value(), real.value());
         assertEquals(synthetic, real);
-//        assertEquals(synthetic.toString(), real.toString());
         assertEquals(synthetic.annotationType(), real.annotationType());
     }
 }
