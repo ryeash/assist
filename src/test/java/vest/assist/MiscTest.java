@@ -13,9 +13,9 @@ import vest.assist.app.Teapot;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-public class MiscTests extends Assert {
+public class MiscTest extends Assert {
 
-    private static final Logger log = LoggerFactory.getLogger(MiscTests.class);
+    private static final Logger log = LoggerFactory.getLogger(MiscTest.class);
 
     @Test
     public void stringifyTest() {
