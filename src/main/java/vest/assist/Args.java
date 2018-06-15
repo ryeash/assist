@@ -28,7 +28,7 @@ public class Args implements Iterable<String> {
      * @throws ArrayIndexOutOfBoundsException if the given i is greater than the number of arguments
      */
     public String get(int i) {
-        if (i >= args.size()) {
+        if (i < 0 || i >= args.size()) {
             throw new ArrayIndexOutOfBoundsException(args.size() + " argument(s) passed in, can not get position " + i + " for: " + args);
         }
         return args.get(i);

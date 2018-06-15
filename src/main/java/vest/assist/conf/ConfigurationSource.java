@@ -1,13 +1,13 @@
 package vest.assist.conf;
 
 /**
- * An interface for any object that can take a property name and retrieves it's value.
+ * Defines an object that can take a property name and retrieve it's value.
  */
 @FunctionalInterface
 public interface ConfigurationSource {
 
     /**
-     * Get the property value.
+     * Get a property value.
      *
      * @param propertyName the property name
      * @return the property value

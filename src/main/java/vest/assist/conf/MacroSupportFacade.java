@@ -1,8 +1,8 @@
 package vest.assist.conf;
 
 /**
- * A facade wrapper that adds macro filling support. Overrides {@link ConfigurationFacade#get(String)} in order to
- * recursively fill macro values with there properties.
+ * A facade wrapper that adds macro support. Overrides {@link ConfigurationFacade#get(String)} in order to
+ * recursively fill macro values with their properties.
  * <br/>
  * Example:<br/>
  * A properties file containing:<br/>

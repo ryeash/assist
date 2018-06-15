@@ -36,7 +36,6 @@ public interface ConfigurationFacade extends ConfigurationSource {
      */
     List<ConfigurationSource> sources();
 
-
     /**
      * Get a property from the backing configuration sources.
      *

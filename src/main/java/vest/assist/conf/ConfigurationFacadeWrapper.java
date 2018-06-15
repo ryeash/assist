@@ -17,10 +17,6 @@ public class ConfigurationFacadeWrapper implements ConfigurationFacade {
         this.delegate = delegate;
     }
 
-    public static Builder build() {
-        return ConfigurationFacade.build();
-    }
-
     @Override
     public List<ConfigurationSource> sources() {
         return delegate.sources();

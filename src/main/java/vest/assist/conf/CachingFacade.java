@@ -14,7 +14,7 @@ public class CachingFacade extends ConfigurationFacadeWrapper {
 
     public CachingFacade(ConfigurationFacade delegate) {
         super(delegate);
-        this.cache = new ConcurrentHashMap<>(128, .9F, 2);
+        this.cache = new ConcurrentHashMap<>(256, .9F, 4);
     }
 
     @Override

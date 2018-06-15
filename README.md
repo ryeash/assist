@@ -135,7 +135,7 @@ Application app = assist.instance(Application.class);
 
 ### Primary
 
-In instances where you have multiple qualified factory methods returning the same type,
+In case you have multiple qualified factory methods returning the same type,
 you can mark one of them as primary:
 ```java
 public class AppConfig {
@@ -162,7 +162,7 @@ two providers to be registered for the factory, one with the qualifier, one with
 ### Eager
 
 Sometimes you want your @Singletons to not be so lazy. Mark the @Factory as eager to force creation of the
-instance during application configuration.
+instance during configuration processing.
 ```java
 public class AppConfig {
     @Factory(eager = true)
@@ -184,13 +184,13 @@ classes passed into one of the addConfig methods.
 ```java
 @Scan("com.my.base.package")
 public class AppConfig {
-
+    ...
 }
 ```
 When this class is given to an addConfig method of Assist, the classpath (using whatever class loader the current
 thread is using) is scanned recursively for all classes under 'com.my.base.package' that have the @Singleton
 annotation. Providers are created for all found classes, and the get() method is called for each, forcing
-instantiation. If you need to search for some other annotation type, you can:
+instantiation. If you need to search for some other annotation type, set the target:
 ```java
 @Scan(value = "com.my.base.package", target = Endpoint.class)
 ```
@@ -421,7 +421,7 @@ created using the Slf4j LoggerFactory.
 
 Custom handling of @Inject fields and methods can be performed by adding additional ValueLookup implementations to the
 assist instance. A ValueLookup is tasked with finding the value that should be used to set an @Inject marked Field
-or an @Inject marked method's Parameter values. During injection processing Assist instance will iterate through all
+or an @Inject marked method's Parameter values. During injection processing Assist will iterate through all
 registered ValueLookups (in prioritized order) until one of them returns a non-null value for the target.
 
 A new ValueLookup can be registered with:

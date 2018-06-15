@@ -4,7 +4,6 @@ import javax.inject.Qualifier;
 import javax.inject.Scope;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -198,26 +197,11 @@ public class Reflector {
                     + '}';
         } else if (annotatedElement instanceof Parameter) {
             Parameter p = (Parameter) annotatedElement;
-            if (p.getDeclaringExecutable() instanceof Method) {
-                Method m = (Method) p.getDeclaringExecutable();
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", method=" + m
-                        + ", declaredIn=" + debugName(m.getDeclaringClass())
-                        + '}';
-            } else if (p.getDeclaringExecutable() instanceof Constructor) {
-                Constructor c = (Constructor) p.getDeclaringExecutable();
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", constructor=" + c
-                        + ", declaredIn=" + debugName(c.getDeclaringClass())
-                        + '}';
-            } else {
-                return "Parameter{"
-                        + "name=" + p.getName()
-                        + ", executable=" + p.getDeclaringExecutable()
-                        + '}';
-            }
+            return "Parameter{"
+                    + "name=" + p.getName()
+                    + ", executable=" + p.getDeclaringExecutable()
+                    + ", declaredIn=" + debugName(p.getDeclaringExecutable().getDeclaringClass())
+                    + '}';
         } else if (annotatedElement instanceof Method) {
             Method m = (Method) annotatedElement;
             return "Method{"
@@ -230,7 +214,7 @@ public class Reflector {
         }
     }
 
-    private static String debugName(Class c) {
+    public static String debugName(Class c) {
         if (c.isArray()) {
             return c.getTypeName();
         } else if (c.getCanonicalName() != null) {

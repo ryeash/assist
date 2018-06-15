@@ -6,6 +6,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import vest.assist.app.BootConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.Coosie;
@@ -15,11 +16,11 @@ import vest.assist.app.FrenchPress;
 import vest.assist.app.Keurig;
 import vest.assist.app.Leather;
 import vest.assist.app.Log;
-import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
+import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCPropertyInjection;
 import vest.assist.app.TCResourceInjection;
 import vest.assist.app.TCScheduledMethods;
@@ -276,6 +277,7 @@ public class AssistTest extends Assert {
     @Test
     public void boot() {
         Assist.main(new String[]{"vest.assist.app.BootConfig", "-e", "extra", "--debug", "--withValue=something"});
+        assertTrue(BootConfig.booted);
     }
 
     @Test

@@ -12,6 +12,8 @@ public class BootConfig extends AppConfig {
 
     private static final Logger log = LoggerFactory.getLogger(BootConfig.class);
 
+    public static boolean booted = false;
+
     @Inject
     public BootConfig(Assist assist) {
         super(assist);
@@ -51,9 +53,13 @@ public class BootConfig extends AppConfig {
         Assert.assertEquals(args.fourth(), "--debug");
         Assert.assertEquals(args.fifth(), "--withValue=something");
 
+        Assert.assertThrows(IndexOutOfBoundsException.class, () -> args.get(10));
+        Assert.assertThrows(IndexOutOfBoundsException.class, () -> args.get(-1));
+
         for (String arg : args) {
             log.info(arg);
         }
 
+        booted = true;
     }
 }
