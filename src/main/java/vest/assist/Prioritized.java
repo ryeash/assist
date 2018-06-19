@@ -2,6 +2,9 @@ package vest.assist;
 
 import java.util.Comparator;
 
+/**
+ * Defines a class that can be prioritized relative to other classes of similar types.
+ */
 public interface Prioritized {
 
     Comparator<Prioritized> PRIORITIZED_COMPARATOR = Comparator.comparingInt(Prioritized::priority);

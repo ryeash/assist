@@ -4,7 +4,6 @@ import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
 import vest.assist.Reflector;
 
-import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -27,7 +26,7 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
         Reflector reflector = Reflector.of(instance);
 
         for (Field field : reflector.fields()) {
-            if (field.isAnnotationPresent(Inject.class) || field.isAnnotationPresent(Resource.class)) {
+            if (field.isAnnotationPresent(Inject.class)) {
                 try {
                     if (!field.isAccessible()) {
                         field.setAccessible(true);

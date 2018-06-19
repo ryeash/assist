@@ -11,7 +11,7 @@ import javax.inject.Inject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -71,10 +71,10 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
         if (conf == null) {
             conf = assist.instance(ConfigurationFacade.class);
         }
-        if (List.class.isAssignableFrom(rawType)) {
-            return conf.getList(prop.value(), Reflector.getParameterizedType(genericType));
-        } else if (Set.class.isAssignableFrom(rawType)) {
+        if (Set.class.isAssignableFrom(rawType)) {
             return conf.getSet(prop.value(), Reflector.getParameterizedType(genericType));
+        } else if (Collection.class.isAssignableFrom(rawType)) {
+            return conf.getList(prop.value(), Reflector.getParameterizedType(genericType));
         } else {
             return conf.get(prop.value(), rawType);
         }

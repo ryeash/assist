@@ -22,7 +22,6 @@ import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCPropertyInjection;
-import vest.assist.app.TCResourceInjection;
 import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.Teapot;
 
@@ -313,12 +312,6 @@ public class AssistTest extends Assert {
         DAO2 dao2 = assist.instance(DAO2.class);
         assertNotNull(dao2);
         assertSame(dao2.getClass(), TCMultipleDependenciesSatisfied.class);
-    }
-
-    @Test
-    public void resourceInjectionTest() {
-        TCResourceInjection instance = assist.instance(TCResourceInjection.class);
-        assertNotNull(instance.fieldInjected);
     }
 
     @Test

@@ -500,8 +500,8 @@ public class Assist implements Closeable {
     public <T> void setProvider(Class<T> type, Annotation qualifier, Provider<T> provider) {
         synchronized (map) {
             // check if there is already a matching provider registered
-            List<Provider> Providers = map.get(new ClassQualifier(type, qualifier));
-            if (Providers != null) {
+            List<Provider> providers = map.get(new ClassQualifier(type, qualifier));
+            if (providers != null) {
                 // there is already an exact matching provider for the type/qualifier combination, can't add this one
                 throw new IllegalArgumentException("provider for [" + type + "/" + qualifier + "] already exists");
             }
@@ -657,9 +657,9 @@ public class Assist implements Closeable {
 
     @SuppressWarnings("unchecked")
     private <T> Provider<T> getProvider(ClassQualifier classQualifier, Supplier<Provider<T>> ifMissing) {
-        List<Provider> Providers = map.get(classQualifier);
-        if (Providers != null && !Providers.isEmpty()) {
-            return Providers.get(0);
+        List<Provider> providers = map.get(classQualifier);
+        if (providers != null && !providers.isEmpty()) {
+            return providers.get(0);
         }
 
         if (ifMissing == null) {
@@ -667,9 +667,9 @@ public class Assist implements Closeable {
         }
 
         synchronized (map) {
-            Providers = map.get(classQualifier);
-            if (Providers != null && !Providers.isEmpty()) {
-                return Providers.get(0);
+            providers = map.get(classQualifier);
+            if (providers != null && !providers.isEmpty()) {
+                return providers.get(0);
             }
 
             Provider<?> created = ifMissing.get();
