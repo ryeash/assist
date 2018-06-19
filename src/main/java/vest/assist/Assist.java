@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
+import vest.assist.aop.Aspect;
+import vest.assist.aop.AspectList;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
@@ -26,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -154,7 +158,7 @@ public class Assist implements Closeable {
      * Get all instances of the given type.
      *
      * @param type The object type to get the instances for
-     * @return A list of all instances provided by the registered Providers that are type compatible with the requested type
+     * @return A list of all instances provided by the registered providers that are type compatible with the requested type
      */
     public <T> Stream<T> instances(Class<T> type) {
         return providersFor(type).map(Provider::get);
@@ -215,7 +219,7 @@ public class Assist implements Closeable {
      * Get a stream of all providers that can provide the given type.
      *
      * @param type The type that the providers will provide
-     * @return A Stream of all Providers that can provide the given type
+     * @return A Stream of all providers that can provide the given type
      */
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type) {
@@ -231,7 +235,7 @@ public class Assist implements Closeable {
      *
      * @param type      The type that the provider will provider
      * @param qualifier The qualifier to select using
-     * @return A Stream of all Providers that can provide the given typ
+     * @return A Stream of all providers that can provide the given typ
      */
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type, Annotation qualifier) {
@@ -500,8 +504,8 @@ public class Assist implements Closeable {
     public <T> void setProvider(Class<T> type, Annotation qualifier, Provider<T> provider) {
         synchronized (map) {
             // check if there is already a matching provider registered
-            List<Provider> Providers = map.get(new ClassQualifier(type, qualifier));
-            if (Providers != null) {
+            List<Provider> providers = map.get(new ClassQualifier(type, qualifier));
+            if (providers != null) {
                 // there is already an exact matching provider for the type/qualifier combination, can't add this one
                 throw new IllegalArgumentException("provider for [" + type + "/" + qualifier + "] already exists");
             }
@@ -589,6 +593,48 @@ public class Assist implements Closeable {
     }
 
     /**
+     * @see Assist#synthesize(Class, Class[])
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T synthesize(Class<T> interfaceType, Class<? extends Aspect> aspect) {
+        return synthesize(interfaceType, (Class<? extends Aspect>[]) new Class[]{aspect});
+    }
+
+    /**
+     * Synthesize an interface using the given aspects. This method uses {@link Proxy} to create an implementation of the
+     * interface at runtime. The given aspects will be wired together to form the instance and will behave
+     * the same as if they were used as aspects for a compiled implementation (i.e. the same execution order),
+     * except that they will be initialized with 'null' rather than a real instance.
+     *
+     * @param interfaceType The type that will be synthesized
+     * @param aspectTypes   The aspects that will form the basis for the synthesized interface implementation
+     * @return An instance of the interface
+     */
+    public <T> T synthesize(Class<T> interfaceType, Class<? extends Aspect>[] aspectTypes) {
+        Objects.requireNonNull(interfaceType);
+        Objects.requireNonNull(aspectTypes);
+        if (!interfaceType.isInterface()) {
+            throw new IllegalArgumentException("may only synthesize interface types");
+        }
+
+        if (aspectTypes.length == 0) {
+            throw new IllegalArgumentException("no aspect types given");
+        }
+        Aspect aspect;
+        if (aspectTypes.length == 1) {
+            aspect = instance(aspectTypes[0]);
+        } else {
+            Aspect[] aspects = Stream.of(aspectTypes)
+                    .map(this::instance)
+                    .toArray(Aspect[]::new);
+            aspect = new AspectList(aspects);
+        }
+        aspect.init(null);
+        ClassLoader loader = Optional.ofNullable(Thread.currentThread().getContextClassLoader()).orElse(ClassLoader.getSystemClassLoader());
+        return interfaceType.cast(Proxy.newProxyInstance(loader, new Class[]{interfaceType}, aspect));
+    }
+
+    /**
      * Get the value for an annotated element based on its type, annotations, and what is provided by this Assist instance.
      *
      * @param rawType          The raw type of the annotated element
@@ -657,9 +703,9 @@ public class Assist implements Closeable {
 
     @SuppressWarnings("unchecked")
     private <T> Provider<T> getProvider(ClassQualifier classQualifier, Supplier<Provider<T>> ifMissing) {
-        List<Provider> Providers = map.get(classQualifier);
-        if (Providers != null && !Providers.isEmpty()) {
-            return Providers.get(0);
+        List<Provider> providers = map.get(classQualifier);
+        if (providers != null && !providers.isEmpty()) {
+            return providers.get(0);
         }
 
         if (ifMissing == null) {
@@ -667,9 +713,9 @@ public class Assist implements Closeable {
         }
 
         synchronized (map) {
-            Providers = map.get(classQualifier);
-            if (Providers != null && !Providers.isEmpty()) {
-                return Providers.get(0);
+            providers = map.get(classQualifier);
+            if (providers != null && !providers.isEmpty()) {
+                return providers.get(0);
             }
 
             Provider<?> created = ifMissing.get();

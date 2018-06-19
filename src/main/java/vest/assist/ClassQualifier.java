@@ -4,7 +4,7 @@ import java.lang.annotation.Annotation;
 import java.util.Objects;
 
 /**
- * Used internally to track class type and qualifier combinations for Providers.
+ * Used internally to track class type and qualifier combinations for providers.
  */
 public final class ClassQualifier {
     final Class type;
