@@ -8,7 +8,7 @@ import vest.assist.conf.CachingFacade;
 import vest.assist.conf.ConfigurationFacade;
 import vest.assist.conf.DefaultConfigurationFacade;
 import vest.assist.conf.EnvironmentFacade;
-import vest.assist.conf.MacroSupportFacade;
+import vest.assist.conf.InterpolationWrapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -104,7 +104,7 @@ public class ConfigurationTest extends Assert {
                 .map(map)
                 .finish();
 
-        MacroSupportFacade macro = new MacroSupportFacade(facade, "${", "}");
+        InterpolationWrapper macro = new InterpolationWrapper(facade, "${", "}");
         assertEquals(macro.get("name"), "value");
         assertEquals(macro.get("interpolate"), "value value value");
         assertEquals(macro.get("double.interpolate"), "value value value value value");

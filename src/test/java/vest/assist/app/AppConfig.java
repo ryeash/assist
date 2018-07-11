@@ -96,7 +96,7 @@ public class AppConfig extends BaseAppConfig {
                 .classpathFile("test.conf")
                 .enableEnvironments()
                 .enableCaching()
-                .enableMacros()
+                .enableInterpolation()
                 .finish();
     }
 }
