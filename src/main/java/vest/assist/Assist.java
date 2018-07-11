@@ -513,13 +513,16 @@ public class Assist implements Closeable {
      * Scan the classpath (recursively) for classes with the given base package and target annotation and create
      * instances of them. Instances will be injected normally.
      *
-     * @param basePackage The base package to start the scan in;
+     * @param basePackage The base package to start the scan in, it must not end with a wild card;
      *                    example: com.foo.service
      * @param target      The annotation that will be used to select which classes to create instances for;
      *                    example: Singleton.class
      */
     @SuppressWarnings("unchecked")
     public void packageScan(String basePackage, Class<? extends Annotation> target) {
+        if (basePackage.endsWith("*")) {
+            throw new IllegalArgumentException("base package [" + basePackage + "] must not end with '*'");
+        }
         log.info("scanning classpath under {} for @{} classes", basePackage, target.getSimpleName());
         PackageScanner.scan(basePackage)
                 .filter(c -> c.isAnnotationPresent(target))
@@ -611,19 +614,20 @@ public class Assist implements Closeable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Scopes:\n")
+        sb.append("Scopes:\n  ")
                 .append(scopeProviders.entrySet().stream()
                         .map(e -> '@' + e.getKey().getSimpleName() + ':' + e.getValue().getSimpleName())
-                        .collect(Collectors.joining(", ", "  [", "]\n")));
+                        .collect(Collectors.joining("\n  ")))
+                .append("\n");
 
         sb.append("Interceptors:\n  ")
-                .append(interceptors.stream().map(i -> i.getClass().getSimpleName() + ":" + i.priority()).collect(Collectors.joining(", ")))
+                .append(interceptors.stream().map(i -> i.toString() + ":" + i.priority()).collect(Collectors.joining("\n  ")))
                 .append("\n");
 
         if (!valueLookups.isEmpty()) {
             sb.append(ValueLookup.class.getSimpleName())
                     .append(":\n  ")
-                    .append(valueLookups.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining(", ")))
+                    .append(valueLookups.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining("\n  ")))
                     .append("\n");
         }
 
