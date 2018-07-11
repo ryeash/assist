@@ -326,10 +326,6 @@ public class Assist implements Closeable {
             packageScan(scan.value(), scan.target());
         }
 
-        // auto config for ValueLookups and InstanceInterceptors configured via factory methods
-        providersFor(ValueLookup.class).map(Provider::get).forEach(this::addValueLookup);
-        providersFor(InstanceInterceptor.class).map(Provider::get).forEach(this::addInstanceInterceptor);
-
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
         for (FactoryMethodProvider eagerFactory : eagerFactories) {
             log.info("{}: calling eager factory provider: {}", config.getClass().getSimpleName(), eagerFactory);
