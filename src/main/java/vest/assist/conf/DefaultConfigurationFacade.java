@@ -44,6 +44,8 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         this.converterCache.put(StringBuilder.class, StringBuilder::new);
         this.converterCache.put(Byte.class, Byte::valueOf);
         this.converterCache.put(Byte.TYPE, Byte::valueOf);
+        this.converterCache.put(Character.class, str -> str.length() > 0 ? str.charAt(0) : null);
+        this.converterCache.put(Character.TYPE, str -> str.length() > 0 ? str.charAt(0) : null);
         this.converterCache.put(Short.class, Short::valueOf);
         this.converterCache.put(Short.TYPE, Short::valueOf);
         this.converterCache.put(Integer.class, Integer::valueOf);
@@ -58,6 +60,7 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
         this.converterCache.put(Boolean.TYPE, Boolean::valueOf);
         this.converterCache.put(BigInteger.class, BigInteger::new);
         this.converterCache.put(BigDecimal.class, BigDecimal::new);
+        this.converterCache.put(Number.class, BigDecimal::new);
     }
 
     /**
