@@ -1,8 +1,8 @@
 package vest.assist.conf;
 
 /**
- * A facade wrapper that adds macro support. Overrides {@link ConfigurationFacade#get(String)} in order to
- * recursively fill macro values with their properties.
+ * A facade wrapper that adds variable interpolation support. Overrides {@link ConfigurationFacade#get(String)} in
+ * order to recursively fill variables with their values.
  * <br/>
  * Example:<br/>
  * A properties file containing:<br/>
@@ -11,18 +11,18 @@ package vest.assist.conf;
  * uri = http://${host}:3451<br/>
  * </code>
  * <br/>
- * Getting properties with macro support enabled:<br/>
+ * Getting properties with interpolation support enabled:<br/>
  * <code>
- * // the ${host} macro is auto filled by calling conf.get("host")
+ * // the ${host} variable is auto filled by calling conf.get("host")
  * conf.get("uri") => http://10.0.0.1:3451
  * </code>
  */
-public class MacroSupportFacade extends ConfigurationFacadeWrapper {
+public class InterpolationWrapper extends ConfigurationFacadeWrapper {
 
     private String macroOpen;
     private String macroClose;
 
-    public MacroSupportFacade(ConfigurationFacade delegate, String macroOpen, String macroClose) {
+    public InterpolationWrapper(ConfigurationFacade delegate, String macroOpen, String macroClose) {
         super(delegate);
         this.macroOpen = macroOpen;
         this.macroClose = macroClose;

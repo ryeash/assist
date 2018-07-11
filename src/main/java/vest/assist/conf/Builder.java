@@ -25,7 +25,7 @@ public class Builder {
                 .environment()
                 .system()
                 .file(fileProperties)
-                .enableMacros()
+                .enableInterpolation()
                 .enableEnvironments()
                 .finish();
     }
@@ -42,7 +42,7 @@ public class Builder {
     private final List<ConfigurationSource> sources = new ArrayList<>(3);
     private boolean caching = false;
     private boolean environment = false;
-    private boolean macro = false;
+    private boolean interpolate = false;
     private String macroOpen;
     private String macroClose;
 
@@ -130,25 +130,25 @@ public class Builder {
     }
 
     /**
-     * Enable macro support using the default macro enclosures '${' and '}'.
+     * Enable variable interpolation support using the default macro enclosures '${' and '}'.
      *
      * @return this builder
-     * @see MacroSupportFacade
+     * @see InterpolationWrapper
      */
-    public Builder enableMacros() {
-        return enableMacros("${", "}");
+    public Builder enableInterpolation() {
+        return enableInterpolation("${", "}");
     }
 
     /**
-     * Enable macro support.
+     * Enable variable interpolation support.
      *
      * @param macroOpen  the open for a macro
      * @param macroClose the close for a macro
      * @return this builder
-     * @see MacroSupportFacade
+     * @see InterpolationWrapper
      */
-    public Builder enableMacros(String macroOpen, String macroClose) {
-        this.macro = true;
+    public Builder enableInterpolation(String macroOpen, String macroClose) {
+        this.interpolate = true;
         this.macroOpen = macroOpen;
         this.macroClose = macroClose;
         return this;
@@ -176,8 +176,8 @@ public class Builder {
         if (environment) {
             facade = new EnvironmentFacade(facade);
         }
-        if (macro) {
-            facade = new MacroSupportFacade(facade, macroOpen, macroClose);
+        if (interpolate) {
+            facade = new InterpolationWrapper(facade, macroOpen, macroClose);
         }
         if (caching) {
             facade = new CachingFacade(facade);
