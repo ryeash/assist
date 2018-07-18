@@ -318,18 +318,18 @@ public class AssistTest extends Assert {
     public void scheduledTest() {
         TCScheduledMethods sched = assist.instance(TCScheduledMethods.class);
         delay(500);
-        assertEquals(sched.runOnceCount, 1);
         assertEquals(sched.fixedDelayCount, 10);
         assertEquals(sched.fixedRateCount, 10);
+        assertEquals(sched.limitedExecutions, 4);
     }
 
     @Test
-    public void propertiesTest(){
+    public void propertiesTest() {
         TCPropertyInjection prop = assist.instance(TCPropertyInjection.class);
         assertEquals(prop.getStr(), "value");
         assertEquals(prop.bool, Boolean.TRUE);
         assertEquals(prop.integer, 12);
-        assertEquals(prop.numbers, Arrays.asList(1D,1D,2D,3D,5D,8D,13D));
+        assertEquals(prop.numbers, Arrays.asList(1D, 1D, 2D, 3D, 5D, 8D, 13D));
         assertEquals(prop.demoEnum, ConfigurationTest.DemoEnum.CHARLIE);
     }
 }

@@ -317,6 +317,39 @@ during injection. Individual properties can be made optional by setting required
 ```@Property(value = "some.property", required = false)```
 
 
+### @Scheduled
+Methods in injected instances are schedulable using the @Scheduled annotation. Internally, a ScheduledExecutorService is
+used to manage the scheduling and execution of the tasks. The executor must be made available to the Assist instance
+performing the injection.
+
+For example, we can configure the executor in a factory method:
+```java
+public class AppConfig {
+    @Factory
+    @Singleton // it is highly recommended that the executor be made a singleton
+    public ScheduledExecutorService scheduledExecutorServiceFactory() {
+        return Executors.newSingleThreadScheduledExecutor();
+    }
+}
+```
+Using the @Scheduled annotation, set a method to be scheduled by Assist.
+```java
+public class ObjectWithATask {
+    @Scheduled(name = "pointless-task", type = FIXED_RATE, period = 3, executions = 4)
+    private void myScheduledTask(CoffeeMaker cm) {
+        log.info("running task");
+    }
+}
+```
+Now wire an instance and the task will be scheduled.
+```java
+Assist assist = new Assist();
+assist.addConfig(AppConfig.class);
+assist.instance(ObjectWithATask.class);
+```
+See the documentation in @Scheduled for more details.
+
+
 ### Explicit Implementation Definition
 
 It is possible to define the implementation of interfaces/abstract
@@ -330,6 +363,7 @@ assert assist.hasProvider(CoffeeMaker.class);
 // and as expected when we get a CoffeeMaker instance, it's a PourOver
 assert assist.instance(CoffeeMaker.class).getClass() == PourOver.class;
 ```
+
 
 ### Shutdown Container
 

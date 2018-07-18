@@ -1,21 +1,16 @@
 package vest.assist.app;
 
+import org.testng.Assert;
 import vest.assist.annotations.Scheduled;
 
 import static vest.assist.annotations.Scheduled.RunType.FIXED_DELAY;
 import static vest.assist.annotations.Scheduled.RunType.FIXED_RATE;
-import static vest.assist.annotations.Scheduled.RunType.ONCE;
 
 public class TCScheduledMethods {
 
-    public int runOnceCount = 0;
     public int fixedDelayCount = 0;
     public int fixedRateCount = 0;
-
-    @Scheduled(type = ONCE, delay = 10)
-    private void scheduledOnceMethod() {
-        runOnceCount++;
-    }
+    public int limitedExecutions = 0;
 
     @Scheduled(type = FIXED_RATE, period = 50)
     private void scheduledFixedRateMethod() {
@@ -30,5 +25,11 @@ public class TCScheduledMethods {
         } catch (InterruptedException e) {
             // ignored
         }
+    }
+
+    @Scheduled(type = FIXED_RATE, period = 3, executions = 4)
+    private void scheduledLimitedExecutions(CoffeeMaker cm) {
+        Assert.assertNotNull(cm);
+        limitedExecutions++;
     }
 }

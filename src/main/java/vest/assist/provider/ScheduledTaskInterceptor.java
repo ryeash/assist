@@ -41,29 +41,18 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
     }
 
     private void schedule(Scheduled scheduled, Object instance, Method method) {
+        if (scheduled.period() <= 0) {
+            throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
+        }
         ScheduledExecutorService scheduledExecutorService = getScheduledExecutorService();
         ScheduledRunnable runnable = new ScheduledRunnable(instance, method, assist, scheduled);
-        long delay;
+        long delay = Math.max(0, scheduled.delay());
         ScheduledFuture<?> future;
         switch (scheduled.type()) {
-            case ONCE:
-                if (scheduled.delay() <= 0) {
-                    throw new RuntimeException("invalid schedule delay: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
-                }
-                future = scheduledExecutorService.schedule(runnable, scheduled.delay(), scheduled.unit());
-                break;
             case FIXED_RATE:
-                delay = Math.max(0, scheduled.delay());
-                if (scheduled.period() <= 0) {
-                    throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
-                }
                 future = scheduledExecutorService.scheduleAtFixedRate(runnable, delay, scheduled.period(), scheduled.unit());
                 break;
             case FIXED_DELAY:
-                delay = Math.max(0, scheduled.delay());
-                if (scheduled.period() <= 0) {
-                    throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
-                }
                 future = scheduledExecutorService.scheduleWithFixedDelay(runnable, delay, scheduled.period(), scheduled.unit());
                 break;
             default:
@@ -92,6 +81,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         private final Assist assist;
         private final Scheduled scheduled;
         private ScheduledFuture<?> futureHandle;
+        private int executionCount;
 
         ScheduledRunnable(Object instance, Method method, Assist assist, Scheduled scheduled) {
             this.instanceRef = new WeakReference<>(instance);
@@ -102,6 +92,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
             if (!method.isAccessible()) {
                 method.setAccessible(true);
             }
+            this.executionCount = 0;
         }
 
         void setFutureHandle(ScheduledFuture<?> futureHandle) {
@@ -111,14 +102,31 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         @Override
         public void run() {
             try {
+                Thread.currentThread().setName(scheduled.name());
                 Object instance = instanceRef.get();
                 if (instance != null) {
+                    executionCount++;
                     method.invoke(instance, assist.getParameterValues(parameters));
+                    cancelIfExecutionLimitReached();
                 } else if (futureHandle != null) {
                     futureHandle.cancel(false);
                 }
             } catch (Throwable e) {
                 log.error("error running scheduled task [{}] [{}]", scheduled.name(), Reflector.detailString(method), e);
+            }
+        }
+
+        private void cancelIfExecutionLimitReached() {
+            if (scheduled.executions() < 0) {
+                return;
+            }
+            if (executionCount >= scheduled.executions()) {
+                if (futureHandle != null) {
+                    futureHandle.cancel(false);
+                } else {
+                    log.warn("scheduled task {} has hit its execution limit of {}, " +
+                            "but the future handle has not been set so it can't be canceled", scheduled.name(), executionCount);
+                }
             }
         }
 

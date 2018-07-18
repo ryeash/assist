@@ -27,17 +27,14 @@ public @interface Scheduled {
     String name() default "scheduled-task";
 
     /**
-     * The delay before first execution (or only execution if type
-     * is set to {@link RunType#ONCE}). A negative value will cause an exception
-     * if the type is {@link RunType#ONCE}, for other run types this indicates no delay.
+     * The delay before first execution. A negative value indicates no delay.
      */
     long delay() default -1;
 
     /**
-     * The target period between executions of the method. For {@link RunType#ONCE} this setting is ignored,
-     * for types {@link RunType#FIXED_RATE} and {@link RunType#FIXED_DELAY} this must be greater than 0.
+     * The target period between executions of the method. This must be greater than 0.
      */
-    long period() default -1;
+    long period();
 
     /**
      * The unit to use for the delay and period values.
@@ -49,14 +46,12 @@ public @interface Scheduled {
      */
     RunType type() default RunType.FIXED_RATE;
 
-    enum RunType {
-        /**
-         * Run the method once after the configured delay.
-         * Requires the delay attribute be >0.
-         * Maps to {@link java.util.concurrent.ScheduledExecutorService#schedule(Runnable, long, TimeUnit)}
-         */
-        ONCE,
+    /**
+     * The number of times the scheduled method will be executed. Defaults to -1, which is interpreted as unlimited.
+     */
+    int executions() default -1;
 
+    enum RunType {
         /**
          * Run the method repeatedly with configured delay and period.
          * Requires the period attribute be >0.

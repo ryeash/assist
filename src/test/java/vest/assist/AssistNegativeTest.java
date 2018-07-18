@@ -116,25 +116,16 @@ public class AssistNegativeTest extends Assert {
     @Test
     public void scheduleErrors() {
         assist.inject(new Object() {
-            @Scheduled(name = "my-task", type = Scheduled.RunType.ONCE, delay = 1)
-            public void task(String thing) throws Exception {
+            @Scheduled(name = "my-task", type = Scheduled.RunType.FIXED_DELAY, period = 100, executions = 1)
+            public void task() throws Exception {
                 throw new Exception("oh no!");
             }
         });
 
         assertThrows(RuntimeException.class, () -> {
             assist.inject(new Object() {
-                @Scheduled(type = Scheduled.RunType.ONCE, delay = -1)
-                public void task(String thing) {
-
-                }
-            });
-        });
-
-        assertThrows(RuntimeException.class, () -> {
-            assist.inject(new Object() {
                 @Scheduled(type = Scheduled.RunType.FIXED_RATE, period = -1)
-                public void task(String thing) {
+                public void task() {
 
                 }
             });
@@ -143,7 +134,7 @@ public class AssistNegativeTest extends Assert {
         assertThrows(RuntimeException.class, () -> {
             assist.inject(new Object() {
                 @Scheduled(type = Scheduled.RunType.FIXED_DELAY, period = -1)
-                public void task(String thing) {
+                public void task() {
 
                 }
             });
