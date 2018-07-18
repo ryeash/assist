@@ -74,6 +74,8 @@ public class Assist implements Closeable {
     private final List<InstanceInterceptor> interceptors = new LinkedList<>();
     private final ShutdownContainer shutdownContainer;
 
+    private final java.lang.ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new java.lang.ThreadLocal<>();
+
     /**
      * Create a new Assist instance.
      */
@@ -200,7 +202,8 @@ public class Assist implements Closeable {
      */
     public <T> Provider<T> providerFor(Class<T> type, Annotation qualifier) {
         Objects.requireNonNull(type);
-        return getProvider(new ClassQualifier(type, qualifier), () -> {
+        ClassQualifier classQualifier = new ClassQualifier(type, qualifier);
+        return getProvider(classQualifier, () -> {
             if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
                 throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create interfaces/abstract classes");
             }
@@ -611,6 +614,72 @@ public class Assist implements Closeable {
         throw new RuntimeException("internal error: no value lookup is configured");
     }
 
+    /**
+     * Override the provided instance for a provider using the given instance. Overrides
+     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
+     *
+     * @param instance The instance to use as the overridden provider type
+     * @return The provider created for the overridden value
+     * @see #override(Class, Annotation, Object)
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Provider<T> override(T instance) {
+        return override((Class<T>) instance.getClass(), (Annotation) null, instance);
+    }
+
+
+    /**
+     * Override the provided instance for the given type with the given instance. Overrides
+     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
+     *
+     * @param type     The type to override the value for
+     * @param instance The instance to use as the overridden provider type
+     * @return The provider created for the overridden value
+     * @see #override(Class, Annotation, Object)
+     */
+    public <T> Provider<T> override(Class<T> type, T instance) {
+        return override(type, (Annotation) null, instance);
+    }
+
+    /**
+     * Override the provided instance for the given type and name combination with the given instance. Overrides
+     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
+     *
+     * @param type     The type to override the value for
+     * @param name     The name qualifier to use for the type
+     * @param instance The instance to use as the overridden provider type
+     * @return The provider created for the overridden value
+     * @see #override(Class, Annotation, Object)
+     */
+    public <T> Provider<T> override(Class<T> type, String name, T instance) {
+        return override(type, new NamedImpl(name), instance);
+    }
+
+    /**
+     * Override the provided instance for the given type and qualifier combination with the given instance. Overrides
+     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
+     *
+     * @param type      The type to override the value for
+     * @param qualifier The qualifier to use for the type
+     * @param instance  The instance to use as the overridden provider type
+     * @return The provider created for the overridden value
+     */
+    public <T> Provider<T> override(Class<T> type, Annotation qualifier, T instance) {
+        if (threadLocalOverrides.get() == null) {
+            threadLocalOverrides.set(new HashMap<>());
+        }
+        Provider<T> provider = new AdHocProvider<>(instance);
+        threadLocalOverrides.get().put(new ClassQualifier(type, qualifier), provider);
+        return provider;
+    }
+
+    /**
+     * Clear all overridden providers.
+     */
+    public void clearOverrides() {
+        threadLocalOverrides.remove();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -657,6 +726,16 @@ public class Assist implements Closeable {
 
     @SuppressWarnings("unchecked")
     private <T> Provider<T> getProvider(ClassQualifier classQualifier, Supplier<Provider<T>> ifMissing) {
+        // check overrides first
+        Map<ClassQualifier, Provider> overrideMap = threadLocalOverrides.get();
+        if (overrideMap != null) {
+            Provider provider = overrideMap.get(classQualifier);
+            if (provider != null) {
+                return provider;
+            }
+        }
+
+        // now look in the real provider store
         List<Provider> providers = map.get(classQualifier);
         if (providers != null && !providers.isEmpty()) {
             return providers.get(0);
