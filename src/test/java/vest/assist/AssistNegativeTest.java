@@ -14,6 +14,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AssistNegativeTest extends Assert {
 
@@ -114,13 +116,20 @@ public class AssistNegativeTest extends Assert {
 
 
     @Test
-    public void scheduleErrors() {
+    public void scheduleErrors() throws InterruptedException {
+        final AtomicInteger i = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(1);
         assist.inject(new Object() {
             @Scheduled(name = "my-task", type = Scheduled.RunType.FIXED_DELAY, period = 100, executions = 1)
             public void task() throws Exception {
+                i.incrementAndGet();
+                latch.countDown();
                 throw new Exception("oh no!");
             }
         });
+        latch.await();
+        assertEquals(i.get(), 1);
+
 
         assertThrows(RuntimeException.class, () -> {
             assist.inject(new Object() {

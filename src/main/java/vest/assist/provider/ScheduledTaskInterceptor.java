@@ -107,12 +107,13 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                 if (instance != null) {
                     executionCount++;
                     method.invoke(instance, assist.getParameterValues(parameters));
-                    cancelIfExecutionLimitReached();
                 } else if (futureHandle != null) {
                     futureHandle.cancel(false);
                 }
             } catch (Throwable e) {
                 log.error("error running scheduled task [{}] [{}]", scheduled.name(), Reflector.detailString(method), e);
+            } finally {
+                cancelIfExecutionLimitReached();
             }
         }
 
