@@ -1,14 +1,13 @@
 package vest.assist.app;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
 public class Parent {
 
-    @Inject
-    @Log
-    protected Logger log;
+    protected Logger log = LoggerFactory.getLogger(getClass());
 
     protected int i = 0;
 

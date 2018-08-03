@@ -19,8 +19,8 @@ package vest.assist.conf;
  */
 public class InterpolationWrapper extends ConfigurationFacadeWrapper {
 
-    private String macroOpen;
-    private String macroClose;
+    private final String macroOpen;
+    private final String macroClose;
 
     public InterpolationWrapper(ConfigurationFacade delegate, String macroOpen, String macroClose) {
         super(delegate);

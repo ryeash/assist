@@ -30,4 +30,12 @@ public @interface Factory {
      * @default false
      */
     boolean primary() default false;
+
+    /**
+     * True marks the annotated factory method to skip the instance interception stage of the provider workflow. Use
+     * sparingly as this will prevent many of the lifecycle management aspects for provided instances.
+     *
+     * @default false
+     */
+    boolean skipInjection() default false;
 }

@@ -37,7 +37,7 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
      */
     public DefaultConfigurationFacade(List<ConfigurationSource> sources) {
         this.sources = Objects.requireNonNull(sources);
-        this.converterCache = new HashMap<>();
+        this.converterCache = new HashMap<>(32);
         // default converters
         this.converterCache.put(String.class, str -> str);
         this.converterCache.put(CharSequence.class, str -> str);

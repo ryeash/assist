@@ -9,6 +9,7 @@ import vest.assist.aop.Aspect;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Objects;
 
 /**
  * A provider instance that creates objects using a method (e.g. a @Factory method from a configuration object)
@@ -31,18 +32,18 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
         this.method = method;
         this.methodParameters = method.getParameters();
         this.instance = instance;
-        this.factory = method.getAnnotation(Factory.class);
+        this.factory = Objects.requireNonNull(method.getAnnotation(Factory.class));
 
         Aspects aop = method.getAnnotation(Aspects.class);
         this.aspects = aop != null ? aop.value() : null;
     }
 
     public boolean isEager() {
-        return factory != null && factory.eager();
+        return factory.eager();
     }
 
     public boolean isPrimary() {
-        return factory != null && factory.primary();
+        return factory.primary();
     }
 
     @Override
@@ -56,6 +57,13 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
             return t;
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("error invoking method: " + method, e);
+        }
+    }
+
+    @Override
+    protected void inject(Object instance) {
+        if (!factory.skipInjection()) {
+            super.inject(instance);
         }
     }
 
@@ -77,7 +85,5 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
         sb.append(method).append("}:").append(hashCode());
         return sb.toString();
     }
-
-
 }
 

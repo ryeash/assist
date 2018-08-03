@@ -197,7 +197,7 @@ public class Builder {
         }
     }
 
-    public class EnvironmentVariables implements ConfigurationSource {
+    public static class EnvironmentVariables implements ConfigurationSource {
         @Override
         public String get(String propertyName) {
             return System.getenv(propertyName);
@@ -209,7 +209,7 @@ public class Builder {
         }
     }
 
-    public class MapSource implements ConfigurationSource {
+    public static class MapSource implements ConfigurationSource {
 
         private final Map<String, String> map;
 

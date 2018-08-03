@@ -8,6 +8,7 @@ import vest.assist.annotations.Property;
 import vest.assist.conf.ConfigurationFacade;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -19,11 +20,10 @@ import java.util.Set;
  */
 public class PropertyInjector implements InstanceInterceptor, ValueLookup {
 
-    private final Assist assist;
-    private ConfigurationFacade conf;
+    private final Provider<ConfigurationFacade> lazyConf;
 
     public PropertyInjector(Assist assist) {
-        this.assist = assist;
+        this.lazyConf = new LazyProvider<>(assist, ConfigurationFacade.class, null);
     }
 
     @Override
@@ -68,9 +68,7 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
     }
 
     private Object getProperty(Property prop, Class<?> rawType, Type genericType) {
-        if (conf == null) {
-            conf = assist.instance(ConfigurationFacade.class);
-        }
+        ConfigurationFacade conf = lazyConf.get();
         if (Set.class.isAssignableFrom(rawType)) {
             return conf.getSet(prop.value(), Reflector.getParameterizedType(genericType));
         } else if (Collection.class.isAssignableFrom(rawType)) {

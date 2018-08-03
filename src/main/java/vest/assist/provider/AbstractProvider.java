@@ -58,13 +58,17 @@ public abstract class AbstractProvider<T> implements Provider<T> {
         T instance = create();
 
         // inject it
-        assist.inject(instance);
+        inject(instance);
 
         // weave in the aspects
         instance = weaveAspects(instance);
 
         // finished
         return instance;
+    }
+
+    protected void inject(Object instance) {
+        assist.inject(instance);
     }
 
     protected T weaveAspects(T instance) {

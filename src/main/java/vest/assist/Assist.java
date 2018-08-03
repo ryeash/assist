@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -69,7 +70,7 @@ public class Assist implements Closeable {
     }
 
     private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
-    private final Map<Class<? extends Annotation>, Class<? extends ScopeProvider>> scopeProviders = new HashMap<>();
+    private final Map<Class<? extends Annotation>, Class<? extends ScopeProvider>> scopeProviders = new HashMap<>(4);
     private final List<ValueLookup> valueLookups = new LinkedList<>();
     private final List<InstanceInterceptor> interceptors = new LinkedList<>();
     private final ShutdownContainer shutdownContainer;
@@ -532,7 +533,8 @@ public class Assist implements Closeable {
                 .peek(c -> log.info("  scanned class: {}", c))
                 .forEach(type -> {
                     Annotation qualifier = Reflector.of(type).qualifier();
-                    getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type));
+                    Optional.ofNullable(getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type)))
+                            .ifPresent(Provider::get);
                 });
     }
 
@@ -599,7 +601,6 @@ public class Assist implements Closeable {
      * @return The injectable value for the the annotated element
      */
     public Object valueFor(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
-        // give the registered ValueLookups the first chance to find a value
         try {
             for (ValueLookup valueLookup : valueLookups) {
                 Object o = valueLookup.lookup(rawType, genericType, annotatedElement);
@@ -666,7 +667,7 @@ public class Assist implements Closeable {
      */
     public <T> Provider<T> override(Class<T> type, Annotation qualifier, T instance) {
         if (threadLocalOverrides.get() == null) {
-            threadLocalOverrides.set(new HashMap<>());
+            threadLocalOverrides.set(new HashMap<>(4));
         }
         Provider<T> provider = new AdHocProvider<>(instance);
         threadLocalOverrides.get().put(new ClassQualifier(type, qualifier), provider);
@@ -751,9 +752,9 @@ public class Assist implements Closeable {
                 return providers.get(0);
             }
 
-            Provider<?> created = ifMissing.get();
+            Provider<T> created = ifMissing.get();
             setProvider(classQualifier.type(), classQualifier.qualifier(), created);
-            return (Provider<T>) created;
+            return created;
         }
     }
 

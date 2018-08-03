@@ -1,16 +1,14 @@
 package vest.assist.app;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 
 @Named("k")
 public class Keurig implements CoffeeMaker {
 
-    @Inject
-    @Log
-    private Logger log;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
     public String brew() {

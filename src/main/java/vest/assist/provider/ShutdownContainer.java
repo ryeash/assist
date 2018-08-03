@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ShutdownContainer implements InstanceInterceptor, AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final Set<AutoCloseable> cleanupObjects = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<AutoCloseable> cleanupObjects = Collections.newSetFromMap(new WeakHashMap<>(32));
 
     @Override
     public void intercept(Object instance) {

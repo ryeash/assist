@@ -3,8 +3,10 @@ package vest.assist.provider;
 import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
 import vest.assist.Reflector;
+import vest.assist.annotations.Lazy;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -31,7 +33,16 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
                     if (!field.isAccessible()) {
                         field.setAccessible(true);
                     }
-                    field.set(instance, assist.valueFor(field));
+                    if (field.isAnnotationPresent(Lazy.class)) {
+                        if (field.getType() != Provider.class) {
+                            throw new IllegalArgumentException("@Lazy may only be used for Provider types");
+                        }
+                        Class<?> generic = Reflector.getParameterizedType(field.getGenericType());
+                        LazyProvider<?> lp = new LazyProvider<>(assist, generic, Reflector.getQualifier(field));
+                        field.set(instance, lp);
+                    } else {
+                        field.set(instance, assist.valueFor(field));
+                    }
                 } catch (Throwable e) {
                     throw new RuntimeException("could not inject field: " + field, e);
                 }

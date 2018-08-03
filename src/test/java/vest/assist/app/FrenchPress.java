@@ -2,14 +2,11 @@ package vest.assist.app;
 
 
 import org.slf4j.Logger;
-
-import javax.inject.Inject;
+import org.slf4j.LoggerFactory;
 
 public class FrenchPress implements CoffeeMaker, AutoCloseable {
 
-    @Inject
-    @Log
-    private Logger log;
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
     public String brew() {

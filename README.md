@@ -177,6 +177,39 @@ be called once to force creation of the singleton.
 
 It is technically possible to mark any @Factory eager, but it really only makes sense for @Singleton scope.
 
+### Lazy
+In rare cases it may be necessary to inject a handle to an object before assist is ready to properly wire it; possibly
+to avoid dependency or inheritance issues. To solve this, Assist can inject lazy handles to objects:
+```java
+public class LazilyInjected {
+    @Inject // lazy fields still must be marked with @Inject in order to be injected
+    @Lazy
+    private Provider<Dog> lazyDog;
+    
+    ...
+    
+    public void wakeUp(){
+        lazyDog.get().wakeup();
+    }
+}
+```
+When this class is wired, no provider for Dog needs to be available. Assist will internally create a handle to
+get the Dog instance on the first call to Lazy.get(). After the first call the same instance will be returned for each
+subsequent call to get().
+```java
+Assist assist = new Assist();
+// we can inject this class safely
+LazilyInjected li = assist.instance(LazilyInjected.class);
+// now add the Dog instance
+assist.setSingelton(Dog.class, new IrishSetter());
+// and now the lazy dog can be woken up
+li.wakeUp();
+```
+
+This should be a rarity and over use may be indicative of underlying architectural problems.
+
+Note: Lazy providers, e.g. `Lazy<Provider<Dog>>`, are not supported.
+
 ### @Scan
 
 Simple class path scanning is supported via the @Scan annotation. It will only be evaluated on application configuration 

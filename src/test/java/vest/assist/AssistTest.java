@@ -6,6 +6,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import vest.assist.annotations.Factory;
 import vest.assist.app.BootConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
@@ -20,9 +21,13 @@ import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
+import vest.assist.app.TCCustomInjectAnnotation;
+import vest.assist.app.TCLazy;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCPropertyInjection;
+import vest.assist.app.TCScannedComponents;
 import vest.assist.app.TCScheduledMethods;
+import vest.assist.app.TCSkipInjection;
 import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
@@ -36,6 +41,8 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -93,14 +100,21 @@ public class AssistTest extends Assert {
 
     @Test
     public void testScanner() {
-        PackageScanner.scan("vst.assist.app")
-                .peek(type -> assertTrue(type.getCanonicalName().startsWith("vst.assist.app")))
-                .forEach(type -> log.info("{}", type));
+        long count = PackageScanner.scan("vest.assist.app")
+                .peek(type -> assertTrue(type.getCanonicalName().startsWith("vest.assist.app")))
+                .peek(type -> log.info("{}", type))
+                .count();
+        assertTrue(count > 3);
     }
 
     @Test
     public void testScannedDep() {
-        assertTrue(assist.hasProvider(ScannedComponent.class));
+        Assist a = new Assist();
+        a.setSingleton(ExecutorService.class, Executors.newCachedThreadPool());
+        a.setSingleton(CoffeeMaker.class, new PourOver());
+        a.addConfig(TCScannedComponents.class);
+        log.info("{}", a);
+        assertTrue(a.hasProvider(ScannedComponent.class));
     }
 
     @Test
@@ -188,6 +202,14 @@ public class AssistTest extends Assert {
     }
 
     @Test
+    public void testLogInjection() {
+        Assist assist = new Assist();
+        assist.addValueLookup((rawType, genericType, annotatedElement) -> (rawType == Logger.class) ? LoggerFactory.getLogger(((Field) annotatedElement).getDeclaringClass()) : null);
+        TCCustomInjectAnnotation c = assist.instance(TCCustomInjectAnnotation.class);
+        c.logSomething();
+    }
+
+    @Test
     public void testSettingImplementation() {
         Assist assist = new Assist();
         assist.addValueLookup((rawType, genericType, annotatedElement) -> annotatedElement.isAnnotationPresent(Log.class) ? LoggerFactory.getLogger(rawType) : null);
@@ -218,6 +240,7 @@ public class AssistTest extends Assert {
     @Test
     public void testThreading() {
         Assist assist = new Assist();
+        assist.setSingleton(ExecutorService.class, Executors.newCachedThreadPool());
         assist.addValueLookup((rawType, genericType, annotatedElement) -> annotatedElement.isAnnotationPresent(Log.class) ? LoggerFactory.getLogger(rawType) : null);
 
         // should only be ONE singleton class ever created
@@ -369,5 +392,49 @@ public class AssistTest extends Assert {
         assist.clearOverrides();
         cm = assist.instance(CoffeeMaker.class);
         assertEquals(cm.getClass(), FrenchPress.class);
+    }
+
+    @Test
+    public void lazy() {
+        Assist a = new Assist();
+//        a.setSingleton(Logger.class, log);
+
+        TCLazy tc = a.instance(TCLazy.class);
+        assertThrows(() -> tc.lazyMaker.get());
+
+        a.addConfig(new Object() {
+            @Factory
+            public CoffeeMaker fp() {
+                return new FrenchPress();
+            }
+
+            @Factory
+            @Named("fancy")
+            public CoffeeMaker kg() {
+                return new PourOver();
+            }
+        });
+
+        assertNotNull(tc.lazyMaker.get());
+        assertNotNull(tc.lazyFancyMaker.get());
+        assertEquals(tc.lazyMaker.get().getClass(), FrenchPress.class);
+        assertEquals(tc.lazyFancyMaker.get().getClass(), PourOver.class);
+        assertEquals(tc.lazyMaker.get(), tc.lazyMaker.get());
+        assertEquals(tc.lazyFancyMaker.get(), tc.lazyFancyMaker.get());
+        assertNotEquals(tc.lazyMaker.get(), tc.lazyFancyMaker.get());
+    }
+
+    @Test
+    public void testSkipInjection() {
+        Assist assist = new Assist();
+        assist.addConfig(new Object() {
+            @Factory(skipInjection = true)
+            public TCSkipInjection skipInjectionFactory() {
+                return new TCSkipInjection();
+            }
+        });
+
+        TCSkipInjection tc = assist.instance(TCSkipInjection.class);
+        assertNull(tc.coffeMaker);
     }
 }

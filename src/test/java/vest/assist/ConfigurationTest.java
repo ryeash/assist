@@ -177,12 +177,11 @@ public class ConfigurationTest extends Assert {
         DefaultConfigurationFacade conf = new DefaultConfigurationFacade(Collections.emptyList());
         assist.setSingleton(ConfigurationFacade.class, conf);
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            assist.inject(new Object() {
-                @Property(value = "missing")
-                private String notFound;
-            });
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                assist.inject(new Object() {
+                    @Property(value = "missing")
+                    private String notFound;
+                }));
 
         assist.inject(new Object() {
             @Property(value = "missing", required = false)

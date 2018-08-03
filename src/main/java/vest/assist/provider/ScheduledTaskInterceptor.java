@@ -7,6 +7,7 @@ import vest.assist.InstanceInterceptor;
 import vest.assist.Reflector;
 import vest.assist.annotations.Scheduled;
 
+import javax.inject.Provider;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -25,9 +26,11 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ScheduledTaskInterceptor.class);
 
     private final Assist assist;
+    private final Provider<ScheduledExecutorService> lazyExectutor;
 
     public ScheduledTaskInterceptor(Assist assist) {
         this.assist = assist;
+        this.lazyExectutor = new LazyProvider<>(assist, ScheduledExecutorService.class, null);
     }
 
     @Override
@@ -44,7 +47,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         if (scheduled.period() <= 0) {
             throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
         }
-        ScheduledExecutorService scheduledExecutorService = getScheduledExecutorService();
+        ScheduledExecutorService scheduledExecutorService = lazyExectutor.get();
         ScheduledRunnable runnable = new ScheduledRunnable(instance, method, assist, scheduled);
         long delay = Math.max(0, scheduled.delay());
         ScheduledFuture<?> future;
@@ -108,6 +111,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                     executionCount++;
                     method.invoke(instance, assist.getParameterValues(parameters));
                 } else if (futureHandle != null) {
+                    log.info("object instance for scheduled task [{}] has been garbage collected, canceling task", scheduled.name());
                     futureHandle.cancel(false);
                 }
             } catch (Throwable e) {

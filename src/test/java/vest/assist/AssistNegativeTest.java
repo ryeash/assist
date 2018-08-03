@@ -5,7 +5,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.Lazy;
 import vest.assist.annotations.Scheduled;
+import vest.assist.app.CoffeeMaker;
 import vest.assist.app.LoggingAspect;
 import vest.assist.app.Teapot;
 import vest.assist.provider.AdHocProvider;
@@ -15,6 +17,7 @@ import javax.inject.Provider;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AssistNegativeTest extends Assert {
@@ -119,34 +122,43 @@ public class AssistNegativeTest extends Assert {
     public void scheduleErrors() throws InterruptedException {
         final AtomicInteger i = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(1);
-        assist.inject(new Object() {
-            @Scheduled(name = "my-task", type = Scheduled.RunType.FIXED_DELAY, period = 100, executions = 1)
+        Object o = assist.inject(new Object() {
+            @Scheduled(name = "bad-task", type = Scheduled.RunType.FIXED_DELAY, period = 100, executions = 1)
             public void task() throws Exception {
                 i.incrementAndGet();
                 latch.countDown();
                 throw new Exception("oh no!");
             }
         });
-        latch.await();
+        assertNotNull(o);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(i.get(), 1);
 
+        assertThrows(RuntimeException.class, () ->
+                assist.inject(new Object() {
+                    @Scheduled(type = Scheduled.RunType.FIXED_RATE, period = -1)
+                    public void task() {
 
-        assertThrows(RuntimeException.class, () -> {
-            assist.inject(new Object() {
-                @Scheduled(type = Scheduled.RunType.FIXED_RATE, period = -1)
-                public void task() {
+                    }
+                }));
 
-                }
-            });
-        });
+        assertThrows(RuntimeException.class, () ->
+                assist.inject(new Object() {
+                    @Scheduled(type = Scheduled.RunType.FIXED_DELAY, period = -1)
+                    public void task() {
 
-        assertThrows(RuntimeException.class, () -> {
-            assist.inject(new Object() {
-                @Scheduled(type = Scheduled.RunType.FIXED_DELAY, period = -1)
-                public void task() {
+                    }
+                }));
+    }
 
-                }
-            });
-        });
+    @Test
+    public void lazyErrors() {
+        Assist assist = new Assist();
+        assertThrows(() ->
+                assist.inject(new Object() {
+                    @Inject
+                    @Lazy
+                    private CoffeeMaker coffeeMaker;
+                }));
     }
 }
