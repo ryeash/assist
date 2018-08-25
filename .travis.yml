@@ -5,7 +5,7 @@ jdk:
   - openjdk8
   - openjdk9
   - openjdk10
-  - openjdk11
+#  - openjdk11 Disabled because jacoco can't instrument correctly
 
 after_success:
   - mvn clean test jacoco:report coveralls:report
