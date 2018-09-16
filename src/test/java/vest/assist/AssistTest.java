@@ -24,6 +24,7 @@ import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCCustomInjectAnnotation;
 import vest.assist.app.TCLazy;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
+import vest.assist.app.TCOptional;
 import vest.assist.app.TCPropertyInjection;
 import vest.assist.app.TCScannedComponents;
 import vest.assist.app.TCScheduledMethods;
@@ -325,6 +326,12 @@ public class AssistTest extends Assert {
         assertTrue(man.coffeeMakers.contains(cm));
         assertTrue(man.coffeeMakerSet.contains(cm));
         assertTrue(man.coffeeMakerCollection.contains(cm));
+    }
+
+    @Test
+    public void optionalInject() {
+        TCOptional instance = assist.instance(TCOptional.class);
+        assertTrue(instance.coffeMakerOpt.isPresent());
     }
 
     @Test

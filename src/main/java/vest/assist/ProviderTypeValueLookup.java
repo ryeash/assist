@@ -7,9 +7,13 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Serves as the default {@link ValueLookup} for Assist. Finds injectable
@@ -28,16 +32,11 @@ public final class ProviderTypeValueLookup implements ValueLookup {
     public Object lookup(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
         Annotation qualifier = Reflector.getQualifier(annotatedElement);
         if (rawType == Provider.class) {
-            Class<?> realType = getRealType(annotatedElement, genericType);
-            return assist.providerFor(realType, qualifier);
+            return provider(genericType, annotatedElement);
         } else if (Collection.class.isAssignableFrom(rawType)) {
-            Class<?> realType = getRealType(annotatedElement, genericType);
-            return assist.providersFor(realType, qualifier)
-                    .map(Provider::get)
-                    .collect(Collectors.toCollection(rawType == Set.class ? HashSet::new : ArrayList::new));
+            return collection(rawType, genericType, annotatedElement);
         } else if (Optional.class == rawType) {
-            Class<?> realType = getRealType(annotatedElement, genericType);
-            return assist.providersFor(realType, qualifier).findAny();
+            return optional(genericType, annotatedElement);
         } else {
             return assist.instance(rawType, qualifier);
         }
@@ -49,6 +48,36 @@ public final class ProviderTypeValueLookup implements ValueLookup {
             throw new IllegalArgumentException(genericType.getTypeName() + " was not defined with a specific type, injection is impossible for: " + Reflector.detailString(annotatedElement));
         }
         return realType;
+    }
+
+    private Provider provider(Type genericType, AnnotatedElement annotatedElement) {
+        Class<?> realType = getRealType(annotatedElement, genericType);
+        Annotation qualifier = Reflector.getQualifier(annotatedElement);
+        return assist.providerFor(realType, qualifier);
+    }
+
+    private Object collection(Class collectionType, Type genericType, AnnotatedElement annotatedElement) {
+        Class<?> realType = getRealType(annotatedElement, genericType);
+        Annotation qualifier = Reflector.getQualifier(annotatedElement);
+        Collector<Object, ?, Collection<Object>> c;
+        if (NavigableSet.class.isAssignableFrom(collectionType)) {
+            c = Collectors.toCollection(TreeSet::new);
+        } else if (Set.class.isAssignableFrom(collectionType)) {
+            c = Collectors.toCollection(HashSet::new);
+        } else {
+            c = Collectors.toCollection(ArrayList::new);
+        }
+        return assist.providersFor(realType, qualifier)
+                .map(Provider::get)
+                .collect(c);
+    }
+
+    private Object optional(Type genericType, AnnotatedElement annotatedElement) {
+        Annotation qualifier = Reflector.getQualifier(annotatedElement);
+        Class<?> realType = getRealType(annotatedElement, genericType);
+        return Optional.of(assist)
+                .map(a -> assist.providersFor(realType, qualifier))
+                .flatMap(Stream::findAny);
     }
 
     @Override
