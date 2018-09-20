@@ -94,10 +94,7 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
 
         Constructor constructor = list.get(0);
 
-        // make the constructor accessible (if it isn't)
-        if (!constructor.isAccessible()) {
-            constructor.setAccessible(true);
-        }
+        Reflector.makeAccessible(constructor);
         return constructor;
     }
 }

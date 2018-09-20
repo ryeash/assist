@@ -45,12 +45,22 @@ import java.util.stream.Stream;
  * <br/>
  * Additionally, has a main method that can be used to quickly bootstrap and start (in conjunction with an
  * application configuration class) an application.
- * Example: <code>java -cp ... vest.assist.Assist your.app.Config [additional parameters]</code>
  */
 public class Assist implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(Assist.class);
 
+    /**
+     * Usable as the entry point into an application. Requires a fully qualified class name be given as the first command
+     * line argument in order to initiate class wiring and injection.
+     * <br>
+     * Example:
+     * <br><code>java -cp ... vest.assist.Assist your.app.Config [additional parameters]</code>
+     * <br>Or if you create a shaded jar with Assist as the main class:
+     * <br><code>java -jar your-uber.jar your.app.Config [additional parameters]</code>
+     *
+     * @param args The command line arguments
+     */
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("error: must provide the fully qualified application configuration class as the first argument");
@@ -111,7 +121,7 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public <T> T instance(String canonicalClassName) {
         try {
-            Class<?> type = loadClass(canonicalClassName);
+            Class<?> type = Reflector.loadClass(canonicalClassName);
             return (T) instance(type);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("unknown class " + canonicalClassName, e);
@@ -269,7 +279,7 @@ public class Assist implements Closeable {
      */
     public void addConfig(String configClassName) {
         try {
-            Class<?> configClass = loadClass(configClassName);
+            Class<?> configClass = Reflector.loadClass(configClassName);
             addConfig(configClass);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("configuration class does not exist: " + configClassName, e);
@@ -708,16 +718,12 @@ public class Assist implements Closeable {
                 .forEach((type, c) -> {
                     sb.append("\n  ").append(type.getSimpleName());
                     c.stream()
-                            .flatMap(cq -> map.get(cq).stream().map(v -> toString(cq, v)))
+                            .flatMap(cq -> map.get(cq).stream().map(String::valueOf))
                             .sorted()
                             .forEach(s -> sb.append("\n    ").append(s));
                 });
 
         return sb.toString();
-    }
-
-    private static String toString(ClassQualifier classQualifier, Provider provider) {
-        return (classQualifier.qualifier() != null ? classQualifier.qualifier() + "/" : "") + String.valueOf(provider);
     }
 
     @Override
@@ -758,21 +764,4 @@ public class Assist implements Closeable {
         }
     }
 
-    /**
-     * Load a class name using the Thread context class loader if possible, else use {@link Class#forName(String)}.
-     *
-     * @param canonicalClassName The full name of the class to load.
-     * @return The loaded class
-     * @throws ClassNotFoundException if the class does not exist in the class loader
-     */
-    public static Class<?> loadClass(String canonicalClassName) throws ClassNotFoundException {
-        if (Thread.currentThread().getContextClassLoader() != null) {
-            try {
-                return Thread.currentThread().getContextClassLoader().loadClass(canonicalClassName);
-            } catch (ClassNotFoundException c) {
-                // ignored
-            }
-        }
-        return Class.forName(canonicalClassName);
-    }
 }

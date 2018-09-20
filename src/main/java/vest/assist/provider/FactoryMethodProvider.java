@@ -26,9 +26,7 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {
         super(assist, (Class<T>) method.getReturnType(), Reflector.getQualifier(method), Reflector.getScope(method));
-        if (!method.isAccessible()) {
-            method.setAccessible(true);
-        }
+        Reflector.makeAccessible(method);
         this.method = method;
         this.methodParameters = method.getParameters();
         this.instance = instance;

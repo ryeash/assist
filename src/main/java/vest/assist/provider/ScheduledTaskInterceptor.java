@@ -92,9 +92,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
             this.parameters = method.getParameters();
             this.assist = assist;
             this.scheduled = scheduled;
-            if (!method.isAccessible()) {
-                method.setAccessible(true);
-            }
+            Reflector.makeAccessible(method);
             this.executionCount = 0;
         }
 

@@ -30,9 +30,7 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
         for (Field field : reflector.fields()) {
             if (field.isAnnotationPresent(Inject.class)) {
                 try {
-                    if (!field.isAccessible()) {
-                        field.setAccessible(true);
-                    }
+                    Reflector.makeAccessible(field);
                     if (field.isAnnotationPresent(Lazy.class)) {
                         if (field.getType() != Provider.class) {
                             throw new IllegalArgumentException("@Lazy may only be used for Provider types");
@@ -52,9 +50,7 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
         for (Method method : reflector.methods()) {
             if (method.isAnnotationPresent(Inject.class)) {
                 try {
-                    if (!method.isAccessible()) {
-                        method.setAccessible(true);
-                    }
+                    Reflector.makeAccessible(method);
                     method.invoke(instance, assist.getParameterValues(method));
                 } catch (Throwable e) {
                     throw new RuntimeException("error invoking injectable method: " + method, e);

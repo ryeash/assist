@@ -34,9 +34,7 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
                 Property prop = field.getAnnotation(Property.class);
                 try {
                     Object value = getProperty(prop, field.getType(), field.getGenericType());
-                    if (!field.isAccessible()) {
-                        field.setAccessible(true);
-                    }
+                    Reflector.makeAccessible(field);
                     if (value == null && prop.required()) {
                         throw new IllegalArgumentException("missing property: " + prop.value() + ", for " + Reflector.detailString(field));
                     }

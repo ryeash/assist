@@ -26,7 +26,7 @@ public class MiscTest extends Assert {
                 .forEach(f -> log.info(Reflector.detailString(f)));
 
         reflector.methods().stream()
-                .limit(1)
+                .filter(m -> m.getParameterCount() > 0)
                 .forEach(m -> {
                     log.info(Reflector.detailString(m));
                     log.info(Reflector.detailString(m.getParameters()[0]));

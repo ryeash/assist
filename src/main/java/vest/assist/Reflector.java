@@ -3,6 +3,7 @@ package vest.assist;
 import javax.inject.Qualifier;
 import javax.inject.Scope;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -187,6 +188,25 @@ public class Reflector {
         return null;
     }
 
+    /**
+     * Attempts to make the given AccessibleObject truly accessible. Necessary for non-public fields, methods, etc. that
+     * are being injected.
+     *
+     * @param ao The object to set accessibility for
+     */
+    public static void makeAccessible(AccessibleObject ao) {
+        if (!ao.isAccessible()) {
+            ao.setAccessible(true);
+        }
+    }
+
+    /**
+     * Build a detail string, suitable for debugging purposes, from the given annotated element. Useful in exception
+     * cases to fully describe what reflected entity an error occurred on.
+     *
+     * @param annotatedElement The element to build the string from
+     * @return A detailed string describing the given annotated element
+     */
     public static String detailString(AnnotatedElement annotatedElement) {
         if (annotatedElement instanceof Field) {
             Field f = (Field) annotatedElement;
@@ -214,6 +234,12 @@ public class Reflector {
         }
     }
 
+    /**
+     * Get the debug name of a class.
+     *
+     * @param c The class to get the debug name for
+     * @return The debug name of the class
+     */
     public static String debugName(Class c) {
         if (c.isArray()) {
             return c.getTypeName();
@@ -224,11 +250,29 @@ public class Reflector {
         }
     }
 
+    /**
+     * Load a class name using the Thread context class loader if possible, or else use {@link Class#forName(String)}.
+     *
+     * @param canonicalClassName The full name of the class to load.
+     * @return The loaded class
+     * @throws ClassNotFoundException if the class does not exist in the class loader
+     */
+    public static Class<?> loadClass(String canonicalClassName) throws ClassNotFoundException {
+        if (Thread.currentThread().getContextClassLoader() != null) {
+            try {
+                return Thread.currentThread().getContextClassLoader().loadClass(canonicalClassName);
+            } catch (ClassNotFoundException c) {
+                // ignored
+            }
+        }
+        return Class.forName(canonicalClassName);
+    }
+
     private static final class UniqueMethod {
         private final Method method;
         private final Class<?>[] parameterTypes;
 
-        public UniqueMethod(Method method) {
+        UniqueMethod(Method method) {
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
         }

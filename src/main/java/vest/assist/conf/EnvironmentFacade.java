@@ -20,11 +20,11 @@ package vest.assist.conf;
  * Getting different property values:<br/>
  * <code>
  * // tries to find 'test.password' first<br/>
- * conf.get("password") => "Passw0rd"<br/>
+ * conf.get("password") =&gt; "Passw0rd"<br/>
  * <br/>
  * // tries to find 'test.username' first<br/>
  * // then falls back to just 'username'<br/>
- * conf.get("username") => "administrator"
+ * assert conf.get("username") == "administrator"
  * </code>
  */
 public class EnvironmentFacade extends ConfigurationFacadeWrapper {

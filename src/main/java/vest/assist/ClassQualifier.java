@@ -25,15 +25,10 @@ public final class ClassQualifier {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ClassQualifier that = (ClassQualifier) o;
-        return Objects.equals(type, that.type) && Objects.equals(qualifier, that.qualifier);
+        return o != null
+                && o.getClass() == getClass()
+                && Objects.equals(type, ((ClassQualifier) o).type)
+                && Objects.equals(qualifier, ((ClassQualifier) o).qualifier);
     }
 
     @Override

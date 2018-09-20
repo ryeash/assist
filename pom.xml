@@ -8,6 +8,30 @@
     <artifactId>assist</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
+    <name>assist</name>
+    <description>Simple dependency injection framework based on javax.inject.</description>
+    <url>https://github.com/ryeash/assist</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/ryeash/assist.git</connection>
+        <developerConnection>scm:git:ssh://github.com/ryeash/assist.git</developerConnection>
+        <url>https://github.com/ryeash/assist</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Ryan Yeash</name>
+            <id>ryeash</id>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compiler.version>1.8</compiler.version>
@@ -78,6 +102,42 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <additionalOptions>-Xdoclint:none -html5</additionalOptions>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -54,14 +54,14 @@ public @interface Scheduled {
     enum RunType {
         /**
          * Run the method repeatedly with configured delay and period.
-         * Requires the period attribute be >0.
+         * Requires the period attribute be greater than 0.
          * Maps to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}
          */
         FIXED_RATE,
 
         /**
          * Run the method repeatedly with the configured delay and period.
-         * Requires the period attribute be >0.
+         * Requires the period attribute be greater than 0.
          * Maps to {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}
          */
         FIXED_DELAY

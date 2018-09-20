@@ -77,7 +77,7 @@ public class Args implements Iterable<String> {
     }
 
     /**
-     * Look for the flag, for example: args like "-e", flag("e") => true.
+     * Look for the flag, for example: args like "-e", flag("e") =&gt; true.
      *
      * @param flag The flag to search for
      * @return true if the flag is present in the arguments, else false
@@ -92,7 +92,7 @@ public class Args implements Iterable<String> {
     }
 
     /**
-     * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") => "dev"
+     * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") =&gt; "dev"
      *
      * @param flag     The flag to get the value for
      * @param fallback The fallback value to use
@@ -104,7 +104,7 @@ public class Args implements Iterable<String> {
     }
 
     /**
-     * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") => "dev"
+     * Looks for the value of a flag, for example: args like "-e dev", flagValue("e") =&gt; "dev"
      *
      * @param flag The flag to get the value for
      * @return The value of the flag, or null if it's not present
@@ -123,7 +123,7 @@ public class Args implements Iterable<String> {
     }
 
     /**
-     * Look for a verbose flag, for example: args like "--debug", verboseFlag("debug") => true.
+     * Look for a verbose flag, for example: args like "--debug", verboseFlag("debug") =&gt; true.
      *
      * @param flag The verbose flag name to look for
      * @return true if the flag is present in the arguments, else false
@@ -139,7 +139,7 @@ public class Args implements Iterable<String> {
 
     /**
      * Look for the value of a verbose flag,
-     * for example: args like "--properties=myprops.props", verboseFlagValue("properties") => "myprops.props".
+     * for example: args like "--properties=myprops.props", verboseFlagValue("properties") =&gt; "myprops.props".
      *
      * @param flag     The flag to get the value for
      * @param fallback The fallback value to use
@@ -152,7 +152,7 @@ public class Args implements Iterable<String> {
 
     /**
      * Look for the value of a verbose flag,
-     * for example: args like "--properties=myprops.props", verboseFlagValue("properties") => "myprops.props".
+     * for example: args like "--properties=myprops.props", verboseFlagValue("properties") =&gt; "myprops.props".
      *
      * @param flag The flag to get the value for
      * @return The value of the flag, or null if it's not present

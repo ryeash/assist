@@ -14,7 +14,7 @@ package vest.assist.conf;
  * Getting properties with interpolation support enabled:<br/>
  * <code>
  * // the ${host} variable is auto filled by calling conf.get("host")
- * conf.get("uri") => http://10.0.0.1:3451
+ * assert conf.get("uri") == http://10.0.0.1:3451
  * </code>
  */
 public class InterpolationWrapper extends ConfigurationFacadeWrapper {
