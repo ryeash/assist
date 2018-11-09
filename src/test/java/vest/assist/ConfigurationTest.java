@@ -47,9 +47,9 @@ public class ConfigurationTest extends Assert {
 
         assertEquals(conf.get("string"), "value");
         assertEquals(conf.get("missing", "miss"), "miss");
-        assertEquals(conf.get("integer", Integer.class), new Integer(12));
-        assertEquals(conf.get("integer", 0, Integer::valueOf), new Integer(12));
-        assertEquals(conf.get("missingInteger", 0, Integer::valueOf), new Integer(0));
+        assertEquals(conf.get("integer", Integer.class), Integer.valueOf(12));
+        assertEquals(conf.get("integer", 0, Integer::valueOf), Integer.valueOf(12));
+        assertEquals(conf.get("missingInteger", 0, Integer::valueOf), Integer.valueOf(0));
 
         assertEquals(conf.get("double", Double.class), 43.231);
         assertEquals(conf.get("boolean", Boolean.class), Boolean.TRUE);

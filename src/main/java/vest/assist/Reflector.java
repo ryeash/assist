@@ -11,6 +11,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 
 /**
@@ -67,9 +70,9 @@ public class Reflector {
     private final Class type;
     private final Annotation scope;
     private final Annotation qualifier;
-    private final List<Class> hierarchy;
-    private final List<Field> fields;
-    private final List<Method> methods;
+    private final Collection<Class> hierarchy;
+    private final Collection<Field> fields;
+    private final Collection<Method> methods;
 
     private Reflector(Class type) {
         this.type = Objects.requireNonNull(type);
@@ -80,25 +83,34 @@ public class Reflector {
         List<Field> typeFields = new LinkedList<>();
         List<Method> typeMethods = new LinkedList<>();
 
-        Set<Class> interfaces = new HashSet<>();
         Set<UniqueMethod> methodTracker = new HashSet<>();
-        Class temp = type;
-        while (temp != null && temp != Object.class) {
-            typeHierarchy.add(0, temp);
-            Collections.addAll(interfaces, temp.getInterfaces());
-            Collections.addAll(typeFields, temp.getDeclaredFields());
-
-            for (Method method : temp.getDeclaredMethods()) {
+        hierarchy(type).forEach(c -> {
+            typeHierarchy.add(0, c);
+            Collections.addAll(typeFields, c.getDeclaredFields());
+            for (Method method : c.getDeclaredMethods()) {
                 if (methodTracker.add(new UniqueMethod(method))) {
                     typeMethods.add(0, method);
                 }
             }
-            temp = temp.getSuperclass();
+        });
+        this.hierarchy = Collections.unmodifiableCollection(typeHierarchy);
+        this.methods = Collections.unmodifiableCollection(typeMethods);
+        this.fields = Collections.unmodifiableCollection(new HashSet<>(typeFields));
+    }
+
+    /**
+     * Return the hierarchy of the given class, including interfaces, up to, but excluding, {@link Object}.
+     *
+     * @param c the class to get the hierarchy of
+     * @return a stream of classes in the hierarchy of the given class (including the given class and all declared interfaces)
+     */
+    public static Stream<Class> hierarchy(Class c) {
+        if (c == null || c == Object.class) {
+            return Stream.empty();
         }
-        typeHierarchy.addAll(interfaces);
-        this.hierarchy = Collections.unmodifiableList(typeHierarchy);
-        this.methods = Collections.unmodifiableList(typeMethods);
-        this.fields = Collections.unmodifiableList(typeFields);
+        return Stream.of(Stream.of(c), Arrays.stream(c.getInterfaces()), hierarchy(c.getSuperclass()))
+                .flatMap(Function.identity())
+                .distinct();
     }
 
     /**
@@ -125,14 +137,14 @@ public class Reflector {
     /**
      * @return The class hierarchy of the reflected type
      */
-    public List<Class> hierarchy() {
+    public Collection<Class> hierarchy() {
         return hierarchy;
     }
 
     /**
      * @return A stream of all fields defined for the reflected type; includes all access levels, inherited, and static fields
      */
-    public List<Field> fields() {
+    public Collection<Field> fields() {
         return fields;
     }
 
@@ -140,24 +152,38 @@ public class Reflector {
      * @return A stream of all methods defined for the reflected type; includes all access levels, static, inherited, and lambda
      * generated methods
      */
-    public List<Method> methods() {
+    public Collection<Method> methods() {
         return methods;
     }
 
     @Override
     public String toString() {
-        return "Reflector[" + type.getCanonicalName() + "]";
+        return "Reflector[" + type + "]";
     }
 
+    /**
+     * Get the first annotation on the given element identified as a qualifier annotation. A qualifier must have the
+     * {@link Qualifier} annotation attached to it. See {@link javax.inject.Named} as an example.
+     *
+     * @param annotatedElement The element to get the qualifier from
+     * @return The first qualifier found on the element or null if none exists
+     */
     public static Annotation getQualifier(AnnotatedElement annotatedElement) {
         return getAnnotationWithExtension(annotatedElement, Qualifier.class);
     }
 
+    /**
+     * Get the first annotation on the given element identified as a scope annotation. A scope must have the
+     * {@link Scope} annotation attached to it. See {@link javax.inject.Singleton} as an example.
+     *
+     * @param annotatedElement the element to get the scope from
+     * @return The first scope found on the element or null if none exists
+     */
     public static Annotation getScope(AnnotatedElement annotatedElement) {
         return getAnnotationWithExtension(annotatedElement, Scope.class);
     }
 
-    public static Annotation getAnnotationWithExtension(AnnotatedElement annotatedElement, Class<? extends Annotation> parentAnnotation) {
+    private static Annotation getAnnotationWithExtension(AnnotatedElement annotatedElement, Class<? extends Annotation> parentAnnotation) {
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             if (annotation.annotationType() == parentAnnotation) {
                 return annotation;
@@ -175,8 +201,8 @@ public class Reflector {
      * Get the first type parameter for the given type.
      *
      * @param t The type
-     * @return the first type argument if the type is a ParameterizedType and has 1 or more type arguments
-     * otherwise return null
+     * @return the first type argument if the type is a {@link ParameterizedType} and has 1 or more type arguments,
+     * otherwise returns null
      */
     public static Class<?> getParameterizedType(Type t) {
         if (t instanceof ParameterizedType) {
@@ -189,7 +215,7 @@ public class Reflector {
     }
 
     /**
-     * Attempts to make the given AccessibleObject truly accessible. Necessary for non-public fields, methods, etc. that
+     * Attempts to make the given {@link AccessibleObject} truly accessible. Necessary for non-public fields, methods, etc. that
      * are being injected.
      *
      * @param ao The object to set accessibility for
@@ -285,10 +311,8 @@ public class Reflector {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-
             UniqueMethod um = (UniqueMethod) o;
             Method other = um.method;
-
             return Objects.equals(method.getName(), other.getName())
                     && Objects.equals(method.getReturnType(), other.getReturnType())
                     && Arrays.equals(parameterTypes, um.parameterTypes);
