@@ -32,7 +32,7 @@ public class EventBusTest extends Assert {
     }
 
     @Test
-    public void another() throws InterruptedException {
+    public void basicTest() throws InterruptedException {
         TestCase1 tc1 = new TestCase1();
         eventBus.register(tc1);
         eventBus.publish(testStr);
