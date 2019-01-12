@@ -194,7 +194,7 @@ public class LazilyInjected {
 }
 ```
 When this class is wired, no provider for Dog needs to be available. Assist will internally create a handle to
-get the Dog instance on the first call to Lazy.get(). After the first call the same instance will be returned for each
+get the Dog instance on the first call to get(). After the first call the same instance will be returned for each
 subsequent call to get().
 ```java
 Assist assist = new Assist();
@@ -208,12 +208,10 @@ li.wakeUp();
 
 This should be a rarity and over use may be indicative of underlying architectural problems.
 
-Note: Lazy providers, e.g. `Lazy<Provider<Dog>>`, are not supported.
-
 ### @Scan
 
-Simple class path scanning is supported via the @Scan annotation. It will only be evaluated on application configuration 
-classes passed into one of the addConfig methods.
+Simple class path scanning is supported via the [@Scan](src/main/java/vest/assist/annotations/Scan.java). 
+It will only be evaluated on application configuration classes passed into one of the addConfig methods.
 ```java
 @Scan("com.my.base.package")
 public class AppConfig {
@@ -229,7 +227,8 @@ instantiation. If you need to search for some other annotation type, set the tar
 ```
 
 ### @Aspects
-Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the @Aspects annotation.
+Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the 
+[@Aspects](src/main/java/vest/assist/annotations/Aspects.java) annotation.
 You can, for example, add a Logging aspect to a provided instance:
 First define your aspect:
 ```java
@@ -262,7 +261,7 @@ Then apply the aspect to a factory method using @Aspects(LoggingAspect.class):
 @Factory
 @Named("aspect1")
 @Aspects(LoggingAspect.class)
-public CoffeeMaker aspectedFrenchPress1() {
+public CoffeeMaker aopFrenchPress1() {
     return new FrenchPress();
 }
 ```
@@ -272,11 +271,11 @@ Multiple aspects can be used on a single target:
 @Named("aspect2")
 @Singleton
 @Aspects({LoggingAspect.class, TimingAspect.class})
-public CoffeeMaker aspectedFrenchPress2() {
+public CoffeeMaker aopFrenchPress2() {
     return new FrenchPress();
 }
 ```
-One thing to keep in mind when using multiple aspects is that pre and post methods will be called 
+Keep in mind when using multiple aspects: pre and post methods will be called 
 for all aspects but only the exec method of the last aspect in the array will be called. Also
 the call order of aspects may seem a little unusual at first, pre methods are called first to last, exec is only called for
 the last aspect, then post methods are called last to first. So, in the previous example the call order for the aspects will be:
@@ -401,7 +400,8 @@ assert assist.instance(CoffeeMaker.class).getClass() == PourOver.class;
 
 ### Shutdown Container
 
-All objects instantiated by Assist that are AutoCloseable will be tracked by a WeakHashMap and when
+All objects instantiated by Assist that are AutoCloseable will be tracked (using weak references) by 
+[ShutdownContainer](src/main/java/vest/assist/provider/ShutdownContainer.java) and when
 ```assist.close()``` is called, they will be closed as appropriate.
 
 ## Extensibility
@@ -458,7 +458,8 @@ created using the Slf4j LoggerFactory.
 
 ### ValueLookup
 
-Custom handling of @Inject fields and methods can be performed by adding additional ValueLookup implementations to the
+Custom handling of @Inject fields and methods can be performed by adding additional 
+[ValueLookup](src/main/java/vest/assist/ValueLookup.java) implementations to the
 assist instance. A ValueLookup is tasked with finding the value that should be used to set an @Inject marked Field
 or an @Inject marked method's Parameter values. During injection processing Assist will iterate through all
 registered ValueLookups (in prioritized order) until one of them returns a non-null value for the target.
