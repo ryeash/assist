@@ -194,7 +194,7 @@ public class LazilyInjected {
 }
 ```
 When this class is wired, no provider for Dog needs to be available. Assist will internally create a handle to
-get the Dog instance on the first call to Lazy.get(). After the first call the same instance will be returned for each
+get the Dog instance on the first call to get(). After the first call the same instance will be returned for each
 subsequent call to get().
 ```java
 Assist assist = new Assist();
@@ -208,12 +208,10 @@ li.wakeUp();
 
 This should be a rarity and over use may be indicative of underlying architectural problems.
 
-Note: Lazy providers, e.g. `Lazy<Provider<Dog>>`, are not supported.
-
 ### @Scan
 
-Simple class path scanning is supported via the @Scan annotation. It will only be evaluated on application configuration 
-classes passed into one of the addConfig methods.
+Simple class path scanning is supported via the [@Scan](src/main/java/vest/assist/annotations/Scan.java). 
+It will only be evaluated on application configuration classes passed into one of the addConfig methods.
 ```java
 @Scan("com.my.base.package")
 public class AppConfig {
@@ -229,7 +227,8 @@ instantiation. If you need to search for some other annotation type, set the tar
 ```
 
 ### @Aspects
-Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the @Aspects annotation.
+Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the 
+[@Aspects](src/main/java/vest/assist/annotations/Aspects.java) annotation.
 You can, for example, add a Logging aspect to a provided instance:
 First define your aspect:
 ```java
@@ -262,7 +261,7 @@ Then apply the aspect to a factory method using @Aspects(LoggingAspect.class):
 @Factory
 @Named("aspect1")
 @Aspects(LoggingAspect.class)
-public CoffeeMaker aspectedFrenchPress1() {
+public CoffeeMaker aopFrenchPress1() {
     return new FrenchPress();
 }
 ```
@@ -272,11 +271,11 @@ Multiple aspects can be used on a single target:
 @Named("aspect2")
 @Singleton
 @Aspects({LoggingAspect.class, TimingAspect.class})
-public CoffeeMaker aspectedFrenchPress2() {
+public CoffeeMaker aopFrenchPress2() {
     return new FrenchPress();
 }
 ```
-One thing to keep in mind when using multiple aspects is that pre and post methods will be called 
+Keep in mind when using multiple aspects: pre and post methods will be called 
 for all aspects but only the exec method of the last aspect in the array will be called. Also
 the call order of aspects may seem a little unusual at first, pre methods are called first to last, exec is only called for
 the last aspect, then post methods are called last to first. So, in the previous example the call order for the aspects will be:
@@ -292,7 +291,8 @@ Assist uses `java.lang.reflect.Proxy` to join the aspect classes with the provid
 annotation is only usable on methods that return an interface type.
 
 ### @Property
-Assist has built-in property support using the @Property and ConfigurationFacade classes.
+Assist has built-in property support using the [@Property](src/main/java/vest/assist/annotations/Property.java) and 
+[ConfigurationFacade](src/main/java/vest/assist/conf/ConfigurationFacade.java) classes.
 
 To use the @Property annotation, an unqualified ConfigurationFacade must be made available for injection. For example,
 via a @Factory method in an application configuration class:
@@ -400,62 +400,25 @@ assert assist.instance(CoffeeMaker.class).getClass() == PourOver.class;
 
 ### Shutdown Container
 
-All objects instantiated by Assist that are AutoCloseable will be tracked by a WeakHashMap and when
+All objects instantiated by Assist that are AutoCloseable will be tracked (using weak references) by 
+[ShutdownContainer](src/main/java/vest/assist/provider/ShutdownContainer.java) and when
 ```assist.close()``` is called, they will be closed as appropriate.
 
 ## Extensibility
 
-### ScopeProvider
+### ScopeFactory
 
-Support for additional Provider scopes (beyond just Singleton) is handled with the ScopeProvider interface.
-For instance, if you wanted to add a @PerRequest scope:
-
-Create the scope:
-```java
-@Retention(value = RetentionPolicy.RUNTIME)
-@Documented
-@Scope // <-- Scopes MUST have the 'parent' @Scope annotation
-public @interface PerRequest {
-}
-```
-
-Create the ScopeProvider:
-```java
-public class RequestScopeProvider<T> implements ScopeProvider<T> {
-
-    private ThreadLocal<T> threadLocal = new ThreadLocal<>();
-
-    @Override
-    public T scope(Provider<T> provider) {
-        if (threadLocal.get() == null) {
-            synchronized (this) {
-                if (threadLocal.get() == null) {
-                    threadLocal.set(provider.get());
-                }
-            }
-        }
-        return threadLocal.get();
-    }
-}
-```
-
-Register it with Assist:
-```java
-Assist assist = new Assist();
-assist.registerScope(PerRequest.class, RequestScopeProvider.class);
-```
-
-Now class and factory method providers with the @PerRequest scope annotation will create one instance per request.
-
-Note: ScopeProvider implementations must be inject compatible, see:[@Inject](http://docs.oracle.com/javaee/7/api/javax/inject/Inject.html).
-Internally when creating a provider chain, the ScopeProvider itself is created using the
-injection mechanism which will throw errors if the implementation can't be injected.
-
+Support for additional Provider scopes (beyond just Singleton) is handled with the 
+[ScopeFactory](src/main/java/vest/assist/ScopeFactory.java) interface.
+See [ThreadLocal](src/main/java/vest/assist/annotations/ThreadLocal.java) and 
+[ThreadLocalScopeFactory](src/main/java/vest/assist/provider/ThreadLocalScopeFactory.java) 
+for an example on how to create a ScopeFactory.
 
 ### InstanceInterceptor
 
 InstanceInterceptors are used (in general) to inject fields or methods of a class after an instance has been created.
-For example, the InjectAnnotationInterceptor injects the @Inject fields and methods of a class.
+For example, the [InjectAnnotationInterceptor](src/main/java/vest/assist/provider/InjectAnnotationInterceptor.java) 
+injects the @Inject fields and methods of a class.
 
 To add, for example, a log injector:
 
@@ -468,17 +431,26 @@ public @interface Log {
 }
 ```
 
-Add the instance interceptor:
+Define the interceptor:
 ```java
-assist.addInstanceInterceptor(instance -> {
-    Reflector.of(instance).forAnnotatedFields(Log.class, (logAnnotation, field) -> {
-        try {
-            field.set(instance, LoggerFactory.getLogger(instance.getClass()));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("error setting log: " + field, e);
-        }
-    });
-});
+public class LogInjector implements InstanceInterceptor {
+
+    @Override
+    public void intercept(Object instance) {
+        Reflector.of(instance).forAnnotatedFields(Log.class, (logAnnotation, field) -> {
+            try {
+                field.set(instance, LoggerFactory.getLogger(instance.getClass()));
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("error setting log: " + field, e);
+            }
+        });
+    }
+}
+```
+
+Register the instance interceptor:
+```java
+assist.register(new LogInjector());
 ```
 
 Now, any time a Provider creates an object instance with fields annotated with @Log, those fields will be set to a Logger
@@ -486,14 +458,15 @@ created using the Slf4j LoggerFactory.
 
 ### ValueLookup
 
-Custom handling of @Inject fields and methods can be performed by adding additional ValueLookup implementations to the
+Custom handling of @Inject fields and methods can be performed by adding additional 
+[ValueLookup](src/main/java/vest/assist/ValueLookup.java) implementations to the
 assist instance. A ValueLookup is tasked with finding the value that should be used to set an @Inject marked Field
 or an @Inject marked method's Parameter values. During injection processing Assist will iterate through all
 registered ValueLookups (in prioritized order) until one of them returns a non-null value for the target.
 
 A new ValueLookup can be registered with:
 ```java
-assist.addValueLookup(new CustomValueLookup());
+assist.register(new CustomValueLookup());
 ```
 
 ### Prioritized

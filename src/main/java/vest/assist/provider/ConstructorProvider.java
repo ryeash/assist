@@ -29,7 +29,7 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
 
     @SuppressWarnings("unchecked")
     public ConstructorProvider(Class<T> advertisedType, Class<? extends T> realType, Assist assist) {
-        super(assist, advertisedType, Reflector.getQualifier(realType), Reflector.getScope(realType));
+        super(assist, advertisedType, Reflector.getQualifier(realType));
         this.constructor = injectableConstructor(realType);
         this.constructorParameters = this.constructor.getParameters();
 
@@ -55,9 +55,6 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ConstructorProvider{");
-        if (scope != null) {
-            sb.append(scope.annotationType().getSimpleName()).append(":");
-        }
         if (qualifier != null) {
             sb.append(qualifier).append(":");
         }

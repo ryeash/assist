@@ -5,6 +5,9 @@ import vest.assist.Assist;
 import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 
+/**
+ * Used internally to support {@link vest.assist.annotations.Lazy}.
+ */
 public class LazyProvider<T> implements Provider<T> {
 
     private final Assist assist;
@@ -27,7 +30,6 @@ public class LazyProvider<T> implements Provider<T> {
                 if (!initialized) {
                     value = assist.instance(type, qualifier);
                     initialized = true;
-                    return value;
                 }
             }
         }

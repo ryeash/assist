@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
-import vest.assist.annotations.ThreadLocal;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
@@ -12,12 +11,10 @@ import vest.assist.provider.InjectAnnotationInterceptor;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
-import vest.assist.provider.SingletonScopeProvider;
-import vest.assist.provider.ThreadLocalScopeProvider;
+import vest.assist.provider.SingletonScopeFactory;
+import vest.assist.provider.ThreadLocalScopeFactory;
 
 import javax.inject.Provider;
-import javax.inject.Scope;
-import javax.inject.Singleton;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -72,7 +69,7 @@ public class Assist implements Closeable {
             Args a = new Args(args);
             assist.setSingleton(Args.class, a);
             assist.addConfig(a.first());
-            Runtime.getRuntime().addShutdownHook(new Thread(assist::close, "assist-shutdown"));
+            assist.autoShutdown();
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
@@ -80,7 +77,7 @@ public class Assist implements Closeable {
     }
 
     private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
-    private final Map<Class<? extends Annotation>, Class<? extends ScopeProvider>> scopeProviders = new HashMap<>(4);
+    private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>();
     private final List<ValueLookup> valueLookups = new LinkedList<>();
     private final List<InstanceInterceptor> interceptors = new LinkedList<>();
     private final ShutdownContainer shutdownContainer;
@@ -91,22 +88,18 @@ public class Assist implements Closeable {
      * Create a new Assist instance.
      */
     public Assist() {
-        addScopeProvider(Singleton.class, SingletonScopeProvider.class);
-        addScopeProvider(ThreadLocal.class, ThreadLocalScopeProvider.class);
-        addValueLookup(new ProviderTypeValueLookup(this));
-
-        PropertyInjector propertyInjector = new PropertyInjector(this);
-        addInstanceInterceptor(propertyInjector);
-        addValueLookup(propertyInjector);
+        register(new SingletonScopeFactory());
+        register(new ThreadLocalScopeFactory());
+        register(new ProviderTypeValueLookup(this));
+        register(new PropertyInjector(this));
+        register(new InjectAnnotationInterceptor(this));
+        register(new ScheduledTaskInterceptor(this));
+        this.shutdownContainer = new ShutdownContainer();
+        register(this.shutdownContainer);
 
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);
 
-        addInstanceInterceptor(new InjectAnnotationInterceptor(this));
-        addInstanceInterceptor(new ScheduledTaskInterceptor(this));
-
-        this.shutdownContainer = new ShutdownContainer();
-        addInstanceInterceptor(this.shutdownContainer);
     }
 
     /**
@@ -321,12 +314,13 @@ public class Assist implements Closeable {
                 }
 
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
-
+                Annotation scope = Reflector.getScope(method);
+                Provider p = wrapScope(scope, factory);
                 log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), factory);
-                setProvider(method.getReturnType(), factory.qualifier(), factory);
+                setProvider(method.getReturnType(), factory.qualifier(), p);
                 if (factory.qualifier() != null && factory.isPrimary()) {
                     log.info("\\- will be added as primary provider");
-                    setProvider(method.getReturnType(), null, factory);
+                    setProvider(method.getReturnType(), null, p);
                 }
                 if (factory.isEager()) {
                     eagerFactories.add(factory);
@@ -337,7 +331,9 @@ public class Assist implements Closeable {
         // handle the @Scan annotation on the configuration class which will trigger a package scan to create
         // instances of objects with matching target annotation.
         for (Scan scan : config.getClass().getAnnotationsByType(Scan.class)) {
-            packageScan(scan.value(), scan.target());
+            for (String basePackage : scan.value()) {
+                packageScan(basePackage, scan.target());
+            }
         }
 
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
@@ -354,71 +350,62 @@ public class Assist implements Closeable {
     }
 
     /**
-     * Register a ScopeProvider for the given scope annotation. When a Provider annotated with a registered scope
-     * is processed, an instance of the given ScopeProvider will be created to apply the scope to the Provider.
+     * Register an instance of a custom assist component (such as an {@link InstanceInterceptor}) to be used during
+     * injection processing in the context of this Assist instance.
      *
-     * @param scope               The scope annotation. The annotation must have the @Scope annotation on it or a RuntimeException is thrown.
-     * @param scopedProviderClass The concrete implementation class that will be tied to the given scope
+     * @param obj the object to register
+     * @see InstanceInterceptor
+     * @see ValueLookup
+     * @see ScopeFactory
      */
-    public void addScopeProvider(Class<? extends Annotation> scope, Class<? extends ScopeProvider> scopedProviderClass) {
-        Objects.requireNonNull(scope);
-        Objects.requireNonNull(scopedProviderClass);
-        // validate that the scope annotation does indeed have a @Scope annotation
-        if (!scope.isAnnotationPresent(Scope.class)) {
-            throw new IllegalArgumentException("annotation class " + scope.getCanonicalName() + " is not a @Scope annotation");
+    public void register(Object obj) {
+        boolean registered = false;
+        if (obj instanceof ValueLookup) {
+            ValueLookup valueLookup = (ValueLookup) obj;
+            if (!valueLookups.contains(obj)) {
+                registered = true;
+                valueLookups.add(valueLookup);
+                valueLookups.sort(Prioritized.PRIORITIZED_COMPARATOR);
+            }
         }
-        if (scopeProviders.containsKey(scope)) {
-            throw new IllegalArgumentException("scope already registered: " + scope);
+
+        if (obj instanceof InstanceInterceptor) {
+            InstanceInterceptor interceptor = (InstanceInterceptor) obj;
+            if (!interceptors.contains(interceptor)) {
+                registered = true;
+                interceptors.add(interceptor);
+                interceptors.sort(Prioritized.PRIORITIZED_COMPARATOR);
+            }
         }
-        scopeProviders.put(scope, scopedProviderClass);
+
+        if (obj instanceof ScopeFactory) {
+            ScopeFactory scopeFactory = (ScopeFactory) obj;
+            if (!scopeFactories.containsKey(scopeFactory.target())) {
+                registered = true;
+                scopeFactories.put(scopeFactory.target(), scopeFactory);
+            }
+        }
+
+        if (!registered) {
+            log.warn("{} did not implement any known interfaces", obj);
+        }
     }
 
     /**
-     * Create an instance of a ScopeProvider based on the given scope annotation.
+     * Wrap the given provider with the desired scope.
      *
-     * @param scope The scope instance to create a provider for
-     * @return A ScopeProvider instance (wired by this Assist)
-     * @throws IllegalArgumentException if there is no ScopeProvider class registered for the given scope
+     * @param scope    The scope to use with the provider
+     * @param provider The provider to apply the scope to
+     * @return The scoped provider
      */
-    @SuppressWarnings("unchecked")
-    public <T> ScopeProvider<T> createScopeProvider(Annotation scope) {
+    public <T> Provider<T> wrapScope(Annotation scope, Provider<T> provider) {
         if (scope == null) {
-            return null;
-        } else if (scopeProviders.containsKey(scope.annotationType())) {
-            return instance(scopeProviders.get(scope.annotationType()));
+            return provider;
+        } else if (scopeFactories.containsKey(scope.annotationType())) {
+            return scopeFactories.get(scope.annotationType()).scope(provider, scope);
         } else {
-            throw new IllegalArgumentException("unknown scope: " + scope + ", use addScopeProvider(...) to define scope providers");
+            throw new IllegalArgumentException("unknown scope: " + scope + ", register a scope factory to define scope wrappers");
         }
-    }
-
-    /**
-     * Add an additional {@link ValueLookup} to the list. ValueLookups are used to find values for injectable targets;
-     * e.g. fields and parameters.
-     *
-     * @param valueLookup The value lookup to add
-     */
-    public void addValueLookup(ValueLookup valueLookup) {
-        Objects.requireNonNull(valueLookup);
-        if (valueLookups.contains(valueLookup)) {
-            throw new IllegalArgumentException("value lookup is already registered: " + valueLookup);
-        }
-        valueLookups.add(valueLookup);
-        valueLookups.sort(Prioritized.PRIORITIZED_COMPARATOR);
-    }
-
-    /**
-     * Add an additional {@link InstanceInterceptor} to the intercept processing chain. InstanceInterceptors are used
-     * to inject field values and call methods after an object has been instantiated.
-     *
-     * @param interceptor The interceptor to add
-     */
-    public void addInstanceInterceptor(InstanceInterceptor interceptor) {
-        Objects.requireNonNull(interceptor);
-        if (interceptors.contains(interceptor)) {
-            throw new IllegalArgumentException("interceptor is already registered: " + interceptor);
-        }
-        interceptors.add(interceptor);
-        interceptors.sort(Prioritized.PRIORITIZED_COMPARATOR);
     }
 
     /**
@@ -454,7 +441,8 @@ public class Assist implements Closeable {
             throw new IllegalArgumentException("second argument must be a concrete class");
         }
         Reflector ref = Reflector.of(concreteImplementation);
-        setProvider(interfaceOrAbstract, ref.qualifier(), new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this));
+        Annotation scope = ref.scope();
+        setProvider(interfaceOrAbstract, ref.qualifier(), wrapScope(scope, new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this)));
     }
 
     /**
@@ -555,7 +543,7 @@ public class Assist implements Closeable {
      * @return A new Provider that will provide scoped instances of the given type
      */
     public <T> Provider<T> buildProvider(Class<T> type) {
-        return new ConstructorProvider<>(type, this);
+        return wrapScope(Reflector.getScope(type), new ConstructorProvider<>(type, this));
     }
 
     /**
@@ -695,8 +683,8 @@ public class Assist implements Closeable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Scopes:\n  ")
-                .append(scopeProviders.entrySet().stream()
-                        .map(e -> '@' + e.getKey().getSimpleName() + ':' + e.getValue().getSimpleName())
+                .append(scopeFactories.entrySet().stream()
+                        .map(e -> '@' + e.getKey().getSimpleName() + ':' + e.getValue().getClass().getSimpleName())
                         .collect(Collectors.joining("\n  ")))
                 .append("\n");
 
@@ -729,6 +717,13 @@ public class Assist implements Closeable {
     @Override
     public void close() {
         shutdownContainer.close();
+    }
+
+    /**
+     * Add a shutdown hook to call {@link #close()} on this Assist instance.
+     */
+    public void autoShutdown() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::close, "assist-shutdown"));
     }
 
     @SuppressWarnings("unchecked")
