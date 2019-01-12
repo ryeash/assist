@@ -27,7 +27,7 @@ public @interface Scan {
     /**
      * The base packages to scan
      */
-    String value();
+    String[] value();
 
     /**
      * The target annotation to look for on scanned classes. Classes that have the target annotation will be

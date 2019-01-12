@@ -16,7 +16,7 @@ import vest.assist.app.DAO2;
 import vest.assist.app.FrenchPress;
 import vest.assist.app.Keurig;
 import vest.assist.app.Leather;
-import vest.assist.app.Log;
+import vest.assist.app.LogValueLookup;
 import vest.assist.app.Parent;
 import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
@@ -38,7 +38,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -65,7 +64,7 @@ public class AssistTest extends Assert {
     @BeforeClass(alwaysRun = true)
     public void initializeAssist() {
         assist = new Assist();
-        assist.addValueLookup((rawType, genericType, annotatedElement) -> (rawType == Logger.class) ? LoggerFactory.getLogger(((Field) annotatedElement).getDeclaringClass()) : null);
+        assist.register(new LogValueLookup());
         assist.addConfig("vest.assist.app.AppConfig");
     }
 
@@ -205,7 +204,7 @@ public class AssistTest extends Assert {
     @Test
     public void testLogInjection() {
         Assist assist = new Assist();
-        assist.addValueLookup((rawType, genericType, annotatedElement) -> (rawType == Logger.class) ? LoggerFactory.getLogger(((Field) annotatedElement).getDeclaringClass()) : null);
+        assist.register(new LogValueLookup());
         TCCustomInjectAnnotation c = assist.instance(TCCustomInjectAnnotation.class);
         c.logSomething();
     }
@@ -213,7 +212,7 @@ public class AssistTest extends Assert {
     @Test
     public void testSettingImplementation() {
         Assist assist = new Assist();
-        assist.addValueLookup((rawType, genericType, annotatedElement) -> annotatedElement.isAnnotationPresent(Log.class) ? LoggerFactory.getLogger(rawType) : null);
+        assist.register(new LogValueLookup());
         assist.addImplementingClass(CoffeeMaker.class, Keurig.class);
         log.info("{}", assist);
 
@@ -242,7 +241,7 @@ public class AssistTest extends Assert {
     public void testThreading() {
         Assist assist = new Assist();
         assist.setSingleton(ExecutorService.class, Executors.newCachedThreadPool());
-        assist.addValueLookup((rawType, genericType, annotatedElement) -> annotatedElement.isAnnotationPresent(Log.class) ? LoggerFactory.getLogger(rawType) : null);
+        assist.register(new LogValueLookup());
 
         // should only be ONE singleton class ever created
         List<Integer> list = IntStream.range(0, 17)
@@ -404,7 +403,6 @@ public class AssistTest extends Assert {
     @Test
     public void lazy() {
         Assist a = new Assist();
-//        a.setSingleton(Logger.class, log);
 
         TCLazy tc = a.instance(TCLazy.class);
         assertThrows(() -> tc.lazyMaker.get());

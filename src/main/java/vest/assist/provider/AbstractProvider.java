@@ -1,7 +1,6 @@
 package vest.assist.provider;
 
 import vest.assist.Assist;
-import vest.assist.ScopeProvider;
 import vest.assist.aop.Aspect;
 import vest.assist.aop.AspectList;
 
@@ -10,34 +9,22 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
 
 /**
- * Brings together all the different stages of object injection: Instantiating, Injecting, Scoping, and Aspect weaving.
+ * Brings together the different stages of object injection: Instantiating, Injecting, and Aspect weaving.
  */
 public abstract class AbstractProvider<T> implements Provider<T> {
 
     protected final Assist assist;
     protected final Class<T> type;
     protected final Annotation qualifier;
-    protected final Annotation scope;
-    private final ScopeProvider<T> scopeProvider;
 
-    public AbstractProvider(Assist assist, Class<T> type, Annotation qualifier, Annotation scope) {
+    public AbstractProvider(Assist assist, Class<T> type, Annotation qualifier) {
         this.assist = assist;
         this.type = type;
         this.qualifier = qualifier;
-        this.scope = scope;
-        if (scope != null) {
-            this.scopeProvider = assist.createScopeProvider(scope);
-        } else {
-            this.scopeProvider = null;
-        }
     }
 
     public Annotation qualifier() {
         return qualifier;
-    }
-
-    public Annotation scope() {
-        return scope;
     }
 
     protected abstract T create();
@@ -46,14 +33,6 @@ public abstract class AbstractProvider<T> implements Provider<T> {
 
     @Override
     public T get() {
-        if (scopeProvider == null) {
-            return newInstance();
-        } else {
-            return scopeProvider.scope(this::newInstance, scope());
-        }
-    }
-
-    protected T newInstance() {
         // create the instance
         T instance = create();
 

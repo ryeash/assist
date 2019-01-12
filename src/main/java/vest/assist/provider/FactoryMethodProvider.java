@@ -25,7 +25,7 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
 
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {
-        super(assist, (Class<T>) method.getReturnType(), Reflector.getQualifier(method), Reflector.getScope(method));
+        super(assist, (Class<T>) method.getReturnType(), Reflector.getQualifier(method));
         Reflector.makeAccessible(method);
         this.method = method;
         this.methodParameters = method.getParameters();
@@ -50,11 +50,11 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
         try {
             T t = (T) method.invoke(instance, assist.getParameterValues(methodParameters));
             if (t == null) {
-                throw new NullPointerException("method provider [" + method + "] produced a null object");
+                throw new NullPointerException("method provider [" + Reflector.detailString(method) + "] produced a null object");
             }
             return t;
         } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException("error invoking method: " + method, e);
+            throw new RuntimeException("error invoking method: " + Reflector.detailString(method), e);
         }
     }
 
@@ -73,10 +73,7 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("FactoryMethod{");
-        if (scope != null) {
-            sb.append(scope.annotationType().getSimpleName()).append(":");
-        }
+        sb.append("FactoryMethodProvider{");
         if (qualifier != null) {
             sb.append(qualifier).append(":");
         }

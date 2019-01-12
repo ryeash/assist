@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Interceptor that schedules methods annotated with {@link Scheduled} using the primary (unqualified)
@@ -69,14 +70,6 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         return 1100;
     }
 
-    private ScheduledExecutorService getScheduledExecutorService() {
-        if (assist.hasProvider(ScheduledExecutorService.class)) {
-            return assist.instance(ScheduledExecutorService.class);
-        } else {
-            throw new RuntimeException("no ScheduledExecutorService has been made available via injection");
-        }
-    }
-
     private static final class ScheduledRunnable implements Runnable {
         private final WeakReference<Object> instanceRef;
         private final Method method;
@@ -84,7 +77,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         private final Assist assist;
         private final Scheduled scheduled;
         private ScheduledFuture<?> futureHandle;
-        private int executionCount;
+        private AtomicInteger executionCount;
 
         ScheduledRunnable(Object instance, Method method, Assist assist, Scheduled scheduled) {
             this.instanceRef = new WeakReference<>(instance);
@@ -93,7 +86,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
             this.assist = assist;
             this.scheduled = scheduled;
             Reflector.makeAccessible(method);
-            this.executionCount = 0;
+            this.executionCount = new AtomicInteger(0);
         }
 
         void setFutureHandle(ScheduledFuture<?> futureHandle) {
@@ -106,7 +99,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                 Thread.currentThread().setName(scheduled.name());
                 Object instance = instanceRef.get();
                 if (instance != null) {
-                    executionCount++;
+                    executionCount.incrementAndGet();
                     method.invoke(instance, assist.getParameterValues(parameters));
                 } else if (futureHandle != null) {
                     log.info("object instance for scheduled task [{}] has been garbage collected, canceling task", scheduled.name());
@@ -123,7 +116,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
             if (scheduled.executions() < 0) {
                 return;
             }
-            if (executionCount >= scheduled.executions()) {
+            if (executionCount.get() >= scheduled.executions()) {
                 if (futureHandle != null) {
                     futureHandle.cancel(false);
                 } else {

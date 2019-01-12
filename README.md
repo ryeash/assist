@@ -292,7 +292,8 @@ Assist uses `java.lang.reflect.Proxy` to join the aspect classes with the provid
 annotation is only usable on methods that return an interface type.
 
 ### @Property
-Assist has built-in property support using the @Property and ConfigurationFacade classes.
+Assist has built-in property support using the [@Property](src/main/java/vest/assist/annotations/Property.java) and 
+[ConfigurationFacade](src/main/java/vest/assist/conf/ConfigurationFacade.java) classes.
 
 To use the @Property annotation, an unqualified ConfigurationFacade must be made available for injection. For example,
 via a @Factory method in an application configuration class:
@@ -405,57 +406,19 @@ All objects instantiated by Assist that are AutoCloseable will be tracked by a W
 
 ## Extensibility
 
-### ScopeProvider
+### ScopeFactory
 
-Support for additional Provider scopes (beyond just Singleton) is handled with the ScopeProvider interface.
-For instance, if you wanted to add a @PerRequest scope:
-
-Create the scope:
-```java
-@Retention(value = RetentionPolicy.RUNTIME)
-@Documented
-@Scope // <-- Scopes MUST have the 'parent' @Scope annotation
-public @interface PerRequest {
-}
-```
-
-Create the ScopeProvider:
-```java
-public class RequestScopeProvider<T> implements ScopeProvider<T> {
-
-    private ThreadLocal<T> threadLocal = new ThreadLocal<>();
-
-    @Override
-    public T scope(Provider<T> provider) {
-        if (threadLocal.get() == null) {
-            synchronized (this) {
-                if (threadLocal.get() == null) {
-                    threadLocal.set(provider.get());
-                }
-            }
-        }
-        return threadLocal.get();
-    }
-}
-```
-
-Register it with Assist:
-```java
-Assist assist = new Assist();
-assist.registerScope(PerRequest.class, RequestScopeProvider.class);
-```
-
-Now class and factory method providers with the @PerRequest scope annotation will create one instance per request.
-
-Note: ScopeProvider implementations must be inject compatible, see:[@Inject](http://docs.oracle.com/javaee/7/api/javax/inject/Inject.html).
-Internally when creating a provider chain, the ScopeProvider itself is created using the
-injection mechanism which will throw errors if the implementation can't be injected.
-
+Support for additional Provider scopes (beyond just Singleton) is handled with the 
+[ScopeFactory](src/main/java/vest/assist/ScopeFactory.java) interface.
+See [ThreadLocal](src/main/java/vest/assist/annotations/ThreadLocal.java) and 
+[ThreadLocalScopeFactory](src/main/java/vest/assist/provider/ThreadLocalScopeFactory.java) 
+for an example on how to create a ScopeFactory.
 
 ### InstanceInterceptor
 
 InstanceInterceptors are used (in general) to inject fields or methods of a class after an instance has been created.
-For example, the InjectAnnotationInterceptor injects the @Inject fields and methods of a class.
+For example, the [InjectAnnotationInterceptor](src/main/java/vest/assist/provider/InjectAnnotationInterceptor.java) 
+injects the @Inject fields and methods of a class.
 
 To add, for example, a log injector:
 
@@ -468,17 +431,26 @@ public @interface Log {
 }
 ```
 
-Add the instance interceptor:
+Define the interceptor:
 ```java
-assist.addInstanceInterceptor(instance -> {
-    Reflector.of(instance).forAnnotatedFields(Log.class, (logAnnotation, field) -> {
-        try {
-            field.set(instance, LoggerFactory.getLogger(instance.getClass()));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("error setting log: " + field, e);
-        }
-    });
-});
+public class LogInjector implements InstanceInterceptor {
+
+    @Override
+    public void intercept(Object instance) {
+        Reflector.of(instance).forAnnotatedFields(Log.class, (logAnnotation, field) -> {
+            try {
+                field.set(instance, LoggerFactory.getLogger(instance.getClass()));
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("error setting log: " + field, e);
+            }
+        });
+    }
+}
+```
+
+Register the instance interceptor:
+```java
+assist.register(new LogInjector());
 ```
 
 Now, any time a Provider creates an object instance with fields annotated with @Log, those fields will be set to a Logger
@@ -493,7 +465,7 @@ registered ValueLookups (in prioritized order) until one of them returns a non-n
 
 A new ValueLookup can be registered with:
 ```java
-assist.addValueLookup(new CustomValueLookup());
+assist.register(new CustomValueLookup());
 ```
 
 ### Prioritized
