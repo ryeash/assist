@@ -7,8 +7,8 @@ import java.util.Objects;
  * Used internally to track class type and qualifier combinations for Providers.
  */
 public final class ClassQualifier {
-    final Class type;
-    final Annotation qualifier;
+    private final Class type;
+    private final Annotation qualifier;
 
     public ClassQualifier(Class type, Annotation qualifier) {
         this.type = type;
