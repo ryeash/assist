@@ -77,7 +77,7 @@ public class Assist implements Closeable {
     }
 
     private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
-    private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>();
+    private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
     private final List<ValueLookup> valueLookups = new LinkedList<>();
     private final List<InstanceInterceptor> interceptors = new LinkedList<>();
     private final ShutdownContainer shutdownContainer;
@@ -243,7 +243,7 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type, Annotation qualifier) {
         return map.entrySet().stream()
-                .filter(e -> type.isAssignableFrom(e.getKey().type()) && Objects.equals(qualifier, e.getKey().qualifier))
+                .filter(e -> type.isAssignableFrom(e.getKey().type()) && Objects.equals(qualifier, e.getKey().qualifier()))
                 .flatMap(e -> e.getValue().stream())
                 .distinct()
                 .map(p -> (Provider<T>) p);
@@ -358,6 +358,7 @@ public class Assist implements Closeable {
      * @see ValueLookup
      * @see ScopeFactory
      */
+    @SuppressWarnings("unchecked")
     public void register(Object obj) {
         boolean registered = false;
         if (obj instanceof ValueLookup) {
@@ -399,19 +400,16 @@ public class Assist implements Closeable {
      * @return The scoped provider
      */
     public <T> Provider<T> wrapScope(Annotation scope, Provider<T> provider) {
-        if (scope == null) {
-            return provider;
-        } else if (scopeFactories.containsKey(scope.annotationType())) {
-            return scopeFactories.get(scope.annotationType()).scope(provider, scope);
-        } else {
-            throw new IllegalArgumentException("unknown scope: " + scope + ", register a scope factory to define scope wrappers");
-        }
+        return Optional.ofNullable(scope)
+                .map(s -> Objects.requireNonNull(scopeFactories.get(s.annotationType()), "unknown scope: " + s + ", register a scope factory to define scope wrappers"))
+                .map(sf -> sf.scope(provider, scope))
+                .orElse(provider);
     }
 
     /**
      * Set the concrete class that implements or extends the given interface or abstract class. This can be used as a
      * shorthand in place of using an application configuration class in instances where the app architecture is simple
-     * enough that predefining a few implementations is all that is really needed. Functionally, this method is
+     * enough that predefining a few implementations is all that is needed. Functionally, this method is
      * creating a {@link ConstructorProvider} for the concrete class and registering it under the interface. As a
      * result, errors will be throw if the concrete class has no injectable constructor or if there is
      * already a provider that can provide the interface and qualifier (defined on the concrete class) combination.
@@ -427,9 +425,9 @@ public class Assist implements Closeable {
      * </code>
      *
      * @param interfaceOrAbstract    The interface or abstract class for which the concrete class will be registered under.
-     *                               Must be either an interface or an abstract class, or a RuntimeException is thrown.
+     *                               Must be either an interface or an abstract class else an IllegalArgumentException is thrown.
      * @param concreteImplementation The concrete implementation of the interface or abstract class.
-     *                               Must not be an interface or abstract class, or a RuntimeException is thrown.
+     *                               Must not be an interface or abstract class else an IllegalArgumentException is thrown.
      */
     public <T> void addImplementingClass(Class<T> interfaceOrAbstract, Class<? extends T> concreteImplementation) {
         Objects.requireNonNull(interfaceOrAbstract);
