@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,8 +80,8 @@ public class Assist implements Closeable {
 
     private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
     private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
-    private final List<ValueLookup> valueLookups = new LinkedList<>();
-    private final List<InstanceInterceptor> interceptors = new LinkedList<>();
+    private final List<ValueLookup> valueLookups = new ArrayList<>(8);
+    private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
 
     private final java.lang.ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new java.lang.ThreadLocal<>();
@@ -226,7 +228,8 @@ public class Assist implements Closeable {
      */
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type) {
-        return map.entrySet().stream()
+        return map.entrySet()
+                .stream()
                 .filter(e -> type.isAssignableFrom(e.getKey().type()))
                 .flatMap(e -> e.getValue().stream())
                 .distinct()
@@ -520,6 +523,14 @@ public class Assist implements Closeable {
      */
     @SuppressWarnings("unchecked")
     public void packageScan(String basePackage, Class<? extends Annotation> target) {
+        packageScan(basePackage, target, type -> {
+            log.info("  scanned class: {}", type);
+            Annotation qualifier = Reflector.of(type).qualifier();
+            getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type)).get();
+        });
+    }
+
+    public void packageScan(String basePackage, Class<? extends Annotation> target, Consumer<Class<?>> action) {
         if (basePackage.endsWith("*")) {
             throw new IllegalArgumentException("base package [" + basePackage + "] must not end with '*'");
         }
@@ -527,11 +538,7 @@ public class Assist implements Closeable {
         PackageScanner.scan(basePackage)
                 .filter(c -> c.isAnnotationPresent(target))
                 .peek(c -> log.info("  scanned class: {}", c))
-                .forEach(type -> {
-                    Annotation qualifier = Reflector.of(type).qualifier();
-                    Optional.ofNullable(getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type)))
-                            .ifPresent(Provider::get);
-                });
+                .forEach(action);
     }
 
     /**

@@ -9,10 +9,12 @@ import java.util.Objects;
 public final class ClassQualifier {
     private final Class type;
     private final Annotation qualifier;
+    private final int hash;
 
     public ClassQualifier(Class type, Annotation qualifier) {
         this.type = type;
         this.qualifier = qualifier;
+        this.hash = Objects.hash(type.getName(), qualifier);
     }
 
     public Class type() {
@@ -27,12 +29,12 @@ public final class ClassQualifier {
     public boolean equals(Object o) {
         return o != null
                 && o.getClass() == getClass()
-                && Objects.equals(type, ((ClassQualifier) o).type)
+                && type.equals(((ClassQualifier) o).type)
                 && Objects.equals(qualifier, ((ClassQualifier) o).qualifier);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, qualifier);
+        return hash;
     }
 }

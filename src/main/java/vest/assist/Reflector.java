@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  */
 public class Reflector {
 
-    private static final Map<Class, Reflector> CACHE = new HashMap<>();
+    private static final Map<ClassQualifier, Reflector> CACHE = new HashMap<>(64);
 
     /**
      * Get or create the Reflector for the given instance type. Calls to this method are exactly the same as calling
@@ -50,11 +50,14 @@ public class Reflector {
      * @return The Reflector for the type, if the Reflector has already been create once, a cached Reflector will be returned
      */
     public static Reflector of(Class type) {
-        if (CACHE.containsKey(type)) {
-            return CACHE.get(type);
-        }
-        synchronized (CACHE) {
-            return CACHE.computeIfAbsent(type, Reflector::new);
+        ClassQualifier classKey = new ClassQualifier(type, null);
+        Reflector r = CACHE.get(classKey);
+        if (r == null) {
+            synchronized (CACHE) {
+                return CACHE.computeIfAbsent(classKey, Reflector::new);
+            }
+        } else {
+            return r;
         }
     }
 
@@ -74,8 +77,8 @@ public class Reflector {
     private final Collection<Field> fields;
     private final Collection<Method> methods;
 
-    private Reflector(Class type) {
-        this.type = Objects.requireNonNull(type);
+    private Reflector(ClassQualifier key) {
+        this.type = Objects.requireNonNull(key.type());
         this.scope = getScope(type);
         this.qualifier = getQualifier(type);
 
@@ -83,7 +86,7 @@ public class Reflector {
         List<Field> typeFields = new LinkedList<>();
         List<Method> typeMethods = new LinkedList<>();
 
-        Set<UniqueMethod> methodTracker = new HashSet<>();
+        Set<UniqueMethod> methodTracker = new HashSet<>(32);
         hierarchy(type).forEach(c -> {
             typeHierarchy.add(0, c);
             Collections.addAll(typeFields, c.getDeclaredFields());
