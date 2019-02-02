@@ -3,7 +3,7 @@ package vest.assist.conf;
 /**
  * A facade wrapper that adds environment specific support for property values.
  * This facade overrides {@link ConfigurationFacade#get(String)} to prepend the
- * value of the environment property to the property name used. If an environment specific property is found
+ * value of the 'environment' property to the property name used. If an environment specific property is found
  * that value is used, otherwise falls back to using the property name as-is.
  * <br/>
  * Example:

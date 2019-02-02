@@ -29,7 +29,7 @@ public class Invocation {
     }
 
     /**
-     * Set the object that the underlying method will be invoked from
+     * Set/replace the object that the underlying method will be invoked from
      */
     public void setInstance(Object instance) {
         this.instance = instance;
@@ -70,7 +70,7 @@ public class Invocation {
     /**
      * Set the arguments that will be used to invoke the underlying method
      */
-    public void setArgs(Object[] args) {
+    public void setArgs(Object... args) {
         int length = args != null ? args.length : 0;
         if (length != method.getParameterCount()) {
             throw new IllegalArgumentException("wrong number of parameters; expected" + method.getParameterCount() + " given " + length);
@@ -151,6 +151,6 @@ public class Invocation {
 
     @Override
     public int hashCode() {
-        return Objects.hash(instance, method) * 31 * Arrays.hashCode(args);
+        return Objects.hash(instance, method) * 31 * Arrays.deepHashCode(args);
     }
 }

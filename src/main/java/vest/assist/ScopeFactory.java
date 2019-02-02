@@ -9,7 +9,7 @@ import java.lang.annotation.Annotation;
 public interface ScopeFactory<S extends Annotation> {
 
     /**
-     * The target scope that this factory work with.
+     * The target scope that this factory works with.
      */
     Class<S> target();
 

@@ -196,7 +196,8 @@ public interface ConfigurationFacade extends ConfigurationSource {
      * @return A list of values, or the fallback if the property is not found
      */
     default <T> List<T> getList(String propertyName, Class<T> genericType, List<T> fallback) {
-        return getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(ArrayList::new));
+        List<T> list = getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(ArrayList::new));
+        return Collections.unmodifiableList(list);
     }
 
     /**
@@ -220,7 +221,8 @@ public interface ConfigurationFacade extends ConfigurationSource {
      * @return A set of value, or the fallback if the property is not found
      */
     default <T> Set<T> getSet(String propertyName, Class<T> genericType, Set<T> fallback) {
-        return getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<T> set = getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+        return Collections.unmodifiableSet(set);
     }
 
     /**

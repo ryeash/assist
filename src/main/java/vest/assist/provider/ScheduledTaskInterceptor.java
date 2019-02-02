@@ -27,11 +27,11 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ScheduledTaskInterceptor.class);
 
     private final Assist assist;
-    private final Provider<ScheduledExecutorService> lazyExectutor;
+    private final Provider<ScheduledExecutorService> lazyExecutor;
 
     public ScheduledTaskInterceptor(Assist assist) {
         this.assist = assist;
-        this.lazyExectutor = new LazyProvider<>(assist, ScheduledExecutorService.class, null);
+        this.lazyExecutor = assist.lazyProviderFor(ScheduledExecutorService.class, null);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         if (scheduled.period() <= 0) {
             throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
         }
-        ScheduledExecutorService scheduledExecutorService = lazyExectutor.get();
+        ScheduledExecutorService scheduledExecutorService = lazyExecutor.get();
         ScheduledRunnable runnable = new ScheduledRunnable(instance, method, assist, scheduled);
         long delay = Math.max(0, scheduled.delay());
         ScheduledFuture<?> future;

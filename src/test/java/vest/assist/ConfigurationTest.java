@@ -1,10 +1,10 @@
 package vest.assist;
 
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Property;
 import vest.assist.conf.Builder;
-import vest.assist.conf.CachingFacade;
 import vest.assist.conf.ConfigurationFacade;
 import vest.assist.conf.DefaultConfigurationFacade;
 import vest.assist.conf.EnvironmentFacade;
@@ -35,13 +35,18 @@ public class ConfigurationTest extends Assert {
         }
     }
 
-    @Test
-    public void facadeTest() throws IOException {
-        String testFile = Files.find(new File(".").toPath(), 3, (path, basicFileAttributes) -> path.getFileName().toString().equals("test.conf"))
+    protected String testFile;
+
+    @BeforeClass(alwaysRun = true)
+    public void findFile() throws IOException {
+        this.testFile = Files.find(new File(".").toPath(), 3, (path, basicFileAttributes) -> path.getFileName().toString().equals("test.conf"))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("error finding test config"))
                 .toString();
+    }
 
+    @Test
+    public void facadeTest() {
         ConfigurationFacade conf = Builder.defaultFacade(testFile);
         System.out.println(conf);
 
@@ -140,18 +145,27 @@ public class ConfigurationTest extends Assert {
     @Test
     public void cachingTest() {
         Map<String, String> map = new HashMap<>();
-        map.put("name", "value");
 
         ConfigurationFacade facade = Builder.start()
                 .map(map)
+                .file(testFile)
+                .enableCaching()
                 .finish();
 
-        CachingFacade cache = new CachingFacade(facade);
-        assertEquals(cache.get("name"), "value");
-        map.put("name", "different value");
-        assertEquals(cache.get("name"), "value");
-        cache.reload();
-        assertEquals(cache.get("name"), "different value");
+        System.out.println(facade);
+
+        assertEquals(facade.get("string"), "value");
+        map.put("string", "different value");
+        assertEquals(facade.get("string"), "value");
+        facade.reload();
+        assertEquals(facade.get("string"), "different value");
+
+        assertSame(facade.get("integer"), facade.get("integer"));
+        assertSame(facade.getList("string.list"), facade.getList("string.list"));
+
+        List<String> list = facade.getList("string.list");
+        facade.reload();
+        assertNotSame(facade.getList("string.list"), list);
     }
 
     @Test
@@ -190,12 +204,7 @@ public class ConfigurationTest extends Assert {
     }
 
     @Test
-    public void traceTest() throws IOException {
-        String testFile = Files.find(new File(".").toPath(), 3, (path, basicFileAttributes) -> path.getFileName().toString().equals("test.conf"))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("error finding test config"))
-                .toString();
-
+    public void traceTest() {
         Map<String, String> vals = new HashMap<>();
         vals.put("string", "the other value");
 
@@ -208,5 +217,27 @@ public class ConfigurationTest extends Assert {
         for (String trace : conf.trace("string")) {
             System.out.println(trace);
         }
+    }
+
+    @Test
+    public void structured() throws IOException {
+        String testFile = Files.find(new File(".").toPath(), 3, (path, basicFileAttributes) -> path.getFileName().toString().equals("structured.conf"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("error finding test config"))
+                .toString();
+
+        ConfigurationFacade c = Builder.start()
+                .structured(testFile)
+                .enableInterpolation()
+                .enableEnvironments()
+                .finish();
+
+        System.out.println(c);
+
+        assertEquals(c.get("macro"), "true");
+        assertEquals(c.get("basic.number", Integer.class), Integer.valueOf(42));
+        assertEquals(c.get("basic.nested.macro"), "null");
+        assertEquals(c.get("sameline1"), "one");
+        assertEquals(c.get("sameline2"), "two");
     }
 }

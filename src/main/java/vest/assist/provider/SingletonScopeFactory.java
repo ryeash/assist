@@ -19,16 +19,16 @@ public class SingletonScopeFactory implements ScopeFactory<Singleton> {
 
     @Override
     public <T> Provider<T> scope(Provider<T> provider, Annotation scope) {
-        return new SingletonFactory<>(provider);
+        return new SingletonProvider<>(provider);
     }
 
-    public static final class SingletonFactory<T> implements Provider<T> {
+    public static final class SingletonProvider<T> implements Provider<T> {
 
         private Provider<T> provider;
         private volatile boolean initialized = false;
         private T value;
 
-        public SingletonFactory(Provider<T> provider) {
+        public SingletonProvider(Provider<T> provider) {
             this.provider = provider;
         }
 

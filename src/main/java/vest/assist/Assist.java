@@ -8,6 +8,7 @@ import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
+import vest.assist.provider.LazyProvider;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
@@ -218,6 +219,19 @@ public class Assist implements Closeable {
             }
             return buildProvider(type);
         });
+    }
+
+    /**
+     * Build a lazy provider that can supply a class that satisfies the given type and qualifier. On first call to
+     * {@link Provider#get}, if no provider exists that can satisfy the type/qualifier combination, the method will
+     * throw an exception.
+     *
+     * @param type      the type the provider will return
+     * @param qualifier the qualifier for the type
+     * @return a lazy provider that will provide the desired type/qualifier combination
+     */
+    public <T> Provider<T> lazyProviderFor(Class<T> type, Annotation qualifier) {
+        return new LazyProvider<>(this, type, qualifier);
     }
 
     /**

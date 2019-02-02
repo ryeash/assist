@@ -36,7 +36,7 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
                             throw new IllegalArgumentException("@Lazy may only be used for Provider types");
                         }
                         Class<?> generic = Reflector.getParameterizedType(field.getGenericType());
-                        LazyProvider<?> lp = new LazyProvider<>(assist, generic, Reflector.getQualifier(field));
+                        Provider<?> lp = assist.lazyProviderFor(generic, Reflector.getQualifier(field));
                         field.set(instance, lp);
                     } else {
                         field.set(instance, assist.valueFor(field));

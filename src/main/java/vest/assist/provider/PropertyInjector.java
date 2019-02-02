@@ -23,7 +23,7 @@ public class PropertyInjector implements InstanceInterceptor, ValueLookup {
     private final Provider<ConfigurationFacade> lazyConf;
 
     public PropertyInjector(Assist assist) {
-        this.lazyConf = new LazyProvider<>(assist, ConfigurationFacade.class, null);
+        this.lazyConf = assist.lazyProviderFor(ConfigurationFacade.class, null);
     }
 
     @Override

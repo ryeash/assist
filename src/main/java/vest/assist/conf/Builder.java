@@ -1,6 +1,8 @@
 package vest.assist.conf;
 
 import java.io.File;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +86,40 @@ public class Builder {
      */
     public Builder file(File propertiesFile) {
         return add(new PropertiesSource(propertiesFile));
+    }
+
+    /**
+     * Add a {@link StructuredConfiguration} source.
+     *
+     * @param propertiesFile The location of the structured properties file
+     * @return this builder
+     */
+    public Builder structured(String propertiesFile) {
+        return structured(new File(propertiesFile));
+    }
+
+    /**
+     * Add a {@link StructuredConfiguration} source.
+     *
+     * @param propertiesFile The structured properties file
+     * @return this builder
+     */
+    public Builder structured(File propertiesFile) {
+        try {
+            return structured(propertiesFile.toURI().toURL());
+        } catch (MalformedURLException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Add a {@link StructuredConfiguration} source.
+     *
+     * @param propertiesFile The location of the structured properties file
+     * @return this builder
+     */
+    public Builder structured(URL propertiesFile) {
+        return add(new StructuredConfiguration(propertiesFile));
     }
 
     /**
@@ -180,7 +216,7 @@ public class Builder {
             facade = new InterpolationWrapper(facade, macroOpen, macroClose);
         }
         if (caching) {
-            facade = new CachingFacade(facade);
+            facade = CachingFacade.wrap(facade);
         }
         return facade;
     }
