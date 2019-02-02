@@ -15,7 +15,7 @@ import java.util.zip.ZipEntry;
 /**
  * Used to 'discover' classes on the classpath.
  */
-public class PackageScanner {
+public final class PackageScanner {
 
     public static final String CLASS_EXT = ".class";
     public static final char PACKAGE_SEPARATOR = '.';
