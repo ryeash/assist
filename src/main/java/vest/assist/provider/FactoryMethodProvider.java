@@ -59,15 +59,11 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     }
 
     @Override
-    protected void inject(Object instance) {
-        if (!factory.skipInjection()) {
-            super.inject(instance);
+    protected T inject(T instance) {
+        if (factory.skipInjection()) {
+            return instance;
         }
-    }
-
-    @Override
-    protected Class<? extends Aspect>[] aspects() {
-        return aspects;
+        return super.inject(instance);
     }
 
     @Override

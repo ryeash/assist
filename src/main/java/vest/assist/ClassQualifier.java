@@ -14,7 +14,7 @@ public final class ClassQualifier {
     public ClassQualifier(Class type, Annotation qualifier) {
         this.type = type;
         this.qualifier = qualifier;
-        this.hash = Objects.hash(type.getName(), qualifier);
+        this.hash = Reflector.hash(type, qualifier);
     }
 
     public Class type() {

@@ -41,6 +41,9 @@ public class MiscTest extends Assert {
                 .anyMatch(c -> c.getSimpleName().equals("CoffeeMaker")));
         assertTrue(PackageScanner.scan("org.slf4j")
                 .anyMatch(c -> c.getSimpleName().equals("Logger")));
+
+        assertTrue(PackageScanner.scanClassNames("org.slf4j.impl", ClassLoader.getSystemClassLoader())
+                .anyMatch(c -> c.equals("org.slf4j.impl.SimpleLogger")));
     }
 
     @Test

@@ -2,8 +2,6 @@ package vest.assist.provider;
 
 import vest.assist.Assist;
 import vest.assist.Reflector;
-import vest.assist.annotations.Aspects;
-import vest.assist.aop.Aspect;
 
 import javax.inject.Inject;
 import java.lang.reflect.Constructor;
@@ -21,20 +19,15 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
 
     private final Constructor<T> constructor;
     private final Parameter[] constructorParameters;
-    private final Class<? extends Aspect>[] aspects;
 
     public ConstructorProvider(Class<T> type, Assist assist) {
         this(type, type, assist);
     }
 
-    @SuppressWarnings("unchecked")
     public ConstructorProvider(Class<T> advertisedType, Class<? extends T> realType, Assist assist) {
         super(assist, advertisedType, Reflector.getQualifier(realType));
         this.constructor = injectableConstructor(realType);
         this.constructorParameters = this.constructor.getParameters();
-
-        Aspects aop = realType.getAnnotation(Aspects.class);
-        this.aspects = aop != null ? aop.value() : null;
     }
 
     @Override
@@ -44,11 +37,6 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("failed invoking constructor: " + toString(), e);
         }
-    }
-
-    @Override
-    protected Class<? extends Aspect>[] aspects() {
-        return aspects;
     }
 
     @Override
@@ -62,15 +50,16 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
         return sb.toString();
     }
 
-    public static Constructor injectableConstructor(Class type) {
+    @SuppressWarnings("unchecked")
+    public static <T> Constructor<T> injectableConstructor(Class type) {
         if (Modifier.isAbstract(type.getModifiers()) || type.isInterface()) {
             throw new IllegalArgumentException("interfaces/abstract classes do not have injectable constructors");
         }
 
         // find the injectable constructors (no-arg or marked with @Inject)
         int injectAnnotatedConstructors = 0;
-        LinkedList<Constructor> list = new LinkedList<>();
-        for (Constructor c : type.getDeclaredConstructors()) {
+        LinkedList<Constructor<T>> list = new LinkedList<>();
+        for (Constructor<T> c : type.getDeclaredConstructors()) {
             if (c.isAnnotationPresent(Inject.class)) {
                 injectAnnotatedConstructors++;
                 list.addFirst(c);
@@ -89,7 +78,7 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
             throw new RuntimeException("not eligible for injection: '" + type.getCanonicalName() + "' - only one constructor may be marked with @Inject");
         }
 
-        Constructor constructor = list.get(0);
+        Constructor<T> constructor = list.get(0);
 
         Reflector.makeAccessible(constructor);
         return constructor;

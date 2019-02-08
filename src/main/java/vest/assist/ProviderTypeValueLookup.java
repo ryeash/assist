@@ -7,13 +7,12 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Serves as the default {@link ValueLookup} for Assist. Finds injectable
@@ -60,7 +59,7 @@ public final class ProviderTypeValueLookup implements ValueLookup {
         Class<?> realType = getRealType(annotatedElement, genericType);
         Annotation qualifier = Reflector.getQualifier(annotatedElement);
         Collector<Object, ?, Collection<Object>> c;
-        if (NavigableSet.class.isAssignableFrom(collectionType)) {
+        if (SortedSet.class.isAssignableFrom(collectionType)) {
             c = Collectors.toCollection(TreeSet::new);
         } else if (Set.class.isAssignableFrom(collectionType)) {
             c = Collectors.toCollection(HashSet::new);
@@ -75,9 +74,7 @@ public final class ProviderTypeValueLookup implements ValueLookup {
     private Object optional(Type genericType, AnnotatedElement annotatedElement) {
         Annotation qualifier = Reflector.getQualifier(annotatedElement);
         Class<?> realType = getRealType(annotatedElement, genericType);
-        return Optional.of(assist)
-                .map(a -> assist.providersFor(realType, qualifier))
-                .flatMap(Stream::findAny);
+        return assist.providersFor(realType, qualifier).findAny();
     }
 
     @Override

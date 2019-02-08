@@ -2,9 +2,11 @@ package vest.assist;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.provider.AdHocProvider;
+import vest.assist.provider.AspectWeaverProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
@@ -332,8 +334,12 @@ public class Assist implements Closeable {
 
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
                 Annotation scope = Reflector.getScope(method);
-                Provider p = wrapScope(scope, factory);
-                log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), factory);
+
+                Provider p = factory;
+                p = wrapAspects(method, returnType, p);
+                p = wrapScope(scope, p);
+
+                log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), p);
                 setProvider(method.getReturnType(), factory.qualifier(), p);
                 if (factory.qualifier() != null && factory.isPrimary()) {
                     log.info("\\- will be added as primary provider");
@@ -423,6 +429,15 @@ public class Assist implements Closeable {
                 .orElse(provider);
     }
 
+    private <T> Provider<T> wrapAspects(AnnotatedElement annotatedElement, Class<T> type, Provider<T> provider) {
+        Aspects aop = annotatedElement.getAnnotation(Aspects.class);
+        if (aop != null) {
+            return new AspectWeaverProvider<>(this, aop.value(), type, provider);
+        } else {
+            return provider;
+        }
+    }
+
     /**
      * Set the concrete class that implements or extends the given interface or abstract class. This can be used as a
      * shorthand in place of using an application configuration class in instances where the app architecture is simple
@@ -457,7 +472,8 @@ public class Assist implements Closeable {
         }
         Reflector ref = Reflector.of(concreteImplementation);
         Annotation scope = ref.scope();
-        setProvider(interfaceOrAbstract, ref.qualifier(), wrapScope(scope, new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this)));
+        Provider<T> provider = new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this);
+        setProvider(interfaceOrAbstract, ref.qualifier(), wrapScope(scope, provider));
     }
 
     /**

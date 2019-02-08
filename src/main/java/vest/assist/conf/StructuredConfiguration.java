@@ -33,7 +33,7 @@ import static java.io.StreamTokenizer.TT_EOL;
  * }
  * </pre>
  * </code>
- * This will be parsed as <code>root.child.propertyName</code>.
+ * This will be parsed as <code>root.child.propertyName = propertyValue</code>.
  * <p>
  * Reserved characters:
  * '{' : used to nest a level deeper in the structure
@@ -43,7 +43,7 @@ import static java.io.StreamTokenizer.TT_EOL;
  * <p>
  * Quoted strings using either ' or " can be used to escape reserved characters
  * e.g. name = "value contains { } = : and ;"
- * Quotes will likely be necessary to escape any interpolated strings in the file
+ * Quotes will likely be necessary to escape any interpolated values.
  */
 public class StructuredConfiguration implements ConfigurationSource {
 
@@ -59,7 +59,6 @@ public class StructuredConfiguration implements ConfigurationSource {
         this.propertyFile = Objects.requireNonNull(url, "the configuration url can not be null");
         this.levelDelimiter = levelDelimiter;
         reload();
-        properties.forEach((k, v) -> System.out.println(k + ": " + v));
     }
 
     @Override
@@ -78,7 +77,7 @@ public class StructuredConfiguration implements ConfigurationSource {
 
     @Override
     public String toString() {
-        return "PropertiesSource(" + propertyFile + ")";
+        return "StructuredConfiguration(" + propertyFile + ")";
     }
 
     public static Map<String, String> parseStructuredPropertiesFile(Reader reader, String levelDelimiter) {
@@ -140,7 +139,7 @@ public class StructuredConfiguration implements ConfigurationSource {
         StringBuilder sb = new StringBuilder();
         while (tokenizer.nextToken() != TT_EOL) {
             int t = tokenizer.ttype;
-            if (t == TT_EOF || t == TT_EOL || t == ';' || t == '}') {
+            if (t == TT_EOF || t == ';' || t == '}') {
                 break;
             } else if (tokenizer.sval != null) {
                 sb.append(tokenizer.sval);

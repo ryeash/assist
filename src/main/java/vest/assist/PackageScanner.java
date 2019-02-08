@@ -125,7 +125,7 @@ public final class PackageScanner {
         return Collections.list(jf.entries())
                 .stream()
                 .map(ZipEntry::getName)
-                .filter(name -> name.startsWith(path) && name.endsWith(CLASS_EXT))
+                .filter(name -> name.startsWith(path) && name.endsWith(CLASS_EXT) && !name.contains("$"))
                 .map(PackageScanner::trimClassFile);
     }
 

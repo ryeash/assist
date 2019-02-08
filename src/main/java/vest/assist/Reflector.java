@@ -13,13 +13,13 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -29,7 +29,8 @@ import java.util.stream.Stream;
  */
 public class Reflector {
 
-    private static final Map<ClassQualifier, Reflector> CACHE = new HashMap<>(64);
+    private static final Map<ClassQualifier, Reflector> CACHE = new ConcurrentHashMap<>(64, .9F, 4);
+    private static final Map<AnnotatedElement, Annotation> QUALIFIER_CACHE = new ConcurrentHashMap<>(64, .9F, 4);
 
     /**
      * Get or create the Reflector for the given instance type. Calls to this method are exactly the same as calling
@@ -50,24 +51,15 @@ public class Reflector {
      * @return The Reflector for the type, if the Reflector has already been create once, a cached Reflector will be returned
      */
     public static Reflector of(Class type) {
-        ClassQualifier classKey = new ClassQualifier(type, null);
-        Reflector r = CACHE.get(classKey);
-        if (r == null) {
-            synchronized (CACHE) {
-                return CACHE.computeIfAbsent(classKey, Reflector::new);
-            }
-        } else {
-            return r;
-        }
+        return CACHE.computeIfAbsent(new ClassQualifier(type, null), Reflector::new);
     }
 
     /**
      * Clear all cached Reflector instances.
      */
     public static void clear() {
-        synchronized (CACHE) {
-            CACHE.clear();
-        }
+        CACHE.clear();
+        QUALIFIER_CACHE.clear();
     }
 
     private final Class type;
@@ -172,7 +164,7 @@ public class Reflector {
      * @return The first qualifier found on the element or null if none exists
      */
     public static Annotation getQualifier(AnnotatedElement annotatedElement) {
-        return getAnnotationWithExtension(annotatedElement, Qualifier.class);
+        return QUALIFIER_CACHE.computeIfAbsent(annotatedElement, ae -> getAnnotationWithExtension(ae, Qualifier.class));
     }
 
     /**
@@ -297,13 +289,34 @@ public class Reflector {
         return Class.forName(canonicalClassName);
     }
 
+    public static int hash(Object... objects) {
+        int hash = 1;
+        if (objects == null || objects.length == 0) {
+            return hash;
+        }
+        for (Object object : objects) {
+            if (object != null) {
+                if (object instanceof Class) {
+                    hash += 31 * ((Class) object).getName().hashCode();
+                } else if (object.getClass().isArray()) {
+                    hash += 31 * hash((Object[]) object);
+                } else {
+                    hash += 31 * object.hashCode();
+                }
+            }
+        }
+        return hash;
+    }
+
     private static final class UniqueMethod {
         private final Method method;
         private final Class<?>[] parameterTypes;
+        private final int hash;
 
         UniqueMethod(Method method) {
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
+            this.hash = Reflector.hash(method.getName(), method.getReturnType(), parameterTypes);
         }
 
         @Override
@@ -323,7 +336,7 @@ public class Reflector {
 
         @Override
         public int hashCode() {
-            return Objects.hash(method.getName(), method.getReturnType()) * Arrays.hashCode(parameterTypes);
+            return hash;
         }
     }
 }

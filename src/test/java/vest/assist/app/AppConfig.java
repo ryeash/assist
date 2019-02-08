@@ -27,6 +27,7 @@ public class AppConfig extends BaseAppConfig {
 
     @Factory
     public InputStream someInput(Properties properties) {
+        Assert.assertNotNull(properties);
         return new ByteArrayInputStream(new byte[0]);
     }
 
