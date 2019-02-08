@@ -556,7 +556,10 @@ public class Assist implements Closeable {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);
             Annotation qualifier = Reflector.of(type).qualifier();
-            getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type)).get();
+            Provider<?> provider = getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type));
+            if (provider != null) {
+                provider.get();
+            }
         });
     }
 
