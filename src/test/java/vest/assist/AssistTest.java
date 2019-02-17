@@ -7,6 +7,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.ThreadLocal;
 import vest.assist.app.BootConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
@@ -442,4 +443,18 @@ public class AssistTest extends Assert {
         TCSkipInjection tc = assist.instance(TCSkipInjection.class);
         assertNull(tc.coffeMaker);
     }
+
+    @Test
+    public void providersFirAnnotation() {
+        assist.providersForAnnotation(ThreadLocal.class)
+                .forEach(p -> {
+                    log.info("{}", p);
+                });
+
+        assist.providersForAnnotation(ThreadLocal.class)
+                .forEach(p -> {
+                    log.info("{}", p);
+                });
+    }
+
 }

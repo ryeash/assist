@@ -1,6 +1,5 @@
 package vest.assist;
 
-import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 
 /**
@@ -20,5 +19,5 @@ public interface ScopeFactory<S extends Annotation> {
      * @param scope    The scope annotation of the given Provider
      * @return A Provider that adheres to the definition of the scope returned by {@link #target()}
      */
-    <T> Provider<T> scope(Provider<T> provider, Annotation scope);
+    <T> AssistProvider<T> scope(AssistProvider<T> provider, Annotation scope);
 }

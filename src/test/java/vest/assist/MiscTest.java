@@ -9,6 +9,7 @@ import vest.assist.app.Keurig;
 import vest.assist.app.PourOver;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.Teapot;
+import vest.assist.provider.AdHocProvider;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -67,5 +68,11 @@ public class MiscTest extends Assert {
         assertEquals(synthetic.value(), real.value());
         assertEquals(synthetic, real);
         assertEquals(synthetic.annotationType(), real.annotationType());
+    }
+
+    @Test
+    public void foo() {
+        ProviderIndex idx = new ProviderIndex();
+        idx.setProvider(new AdHocProvider<>(new Keurig()));
     }
 }

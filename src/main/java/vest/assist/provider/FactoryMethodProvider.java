@@ -2,13 +2,15 @@ package vest.assist.provider;
 
 import vest.assist.Assist;
 import vest.assist.Reflector;
-import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
-import vest.assist.aop.Aspect;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -19,9 +21,9 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     private final Method method;
     private final Parameter[] methodParameters;
     private final Object instance;
+    private final List<Annotation> annotations;
 
     private final Factory factory;
-    private final Class<? extends Aspect>[] aspects;
 
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {
@@ -30,10 +32,8 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
         this.method = method;
         this.methodParameters = method.getParameters();
         this.instance = instance;
+        this.annotations = Collections.unmodifiableList(Arrays.asList(method.getAnnotations()));
         this.factory = Objects.requireNonNull(method.getAnnotation(Factory.class));
-
-        Aspects aop = method.getAnnotation(Aspects.class);
-        this.aspects = aop != null ? aop.value() : null;
     }
 
     public boolean isEager() {
@@ -42,6 +42,11 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
 
     public boolean isPrimary() {
         return factory.primary();
+    }
+
+    @Override
+    public List<Annotation> annotations() {
+        return annotations;
     }
 
     @Override

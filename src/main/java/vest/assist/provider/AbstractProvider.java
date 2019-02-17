@@ -1,14 +1,16 @@
 package vest.assist.provider;
 
 import vest.assist.Assist;
+import vest.assist.AssistProvider;
 
-import javax.inject.Provider;
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Brings together the instantiating and injecting steps of a provider.
  */
-public abstract class AbstractProvider<T> implements Provider<T> {
+public abstract class AbstractProvider<T> implements AssistProvider<T> {
 
     protected final Assist assist;
     protected final Class<T> type;
@@ -20,6 +22,22 @@ public abstract class AbstractProvider<T> implements Provider<T> {
         this.qualifier = qualifier;
     }
 
+    @Override
+    public Class<T> type() {
+        return type;
+    }
+
+    @Override
+    public Annotation scope() {
+        return null;
+    }
+
+    @Override
+    public List<Annotation> annotations() {
+        return Collections.emptyList();
+    }
+
+    @Override
     public Annotation qualifier() {
         return qualifier;
     }
