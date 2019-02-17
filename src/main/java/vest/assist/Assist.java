@@ -10,6 +10,7 @@ import vest.assist.provider.AspectWeaverProvider;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
+import vest.assist.provider.InjectionProvider;
 import vest.assist.provider.LazyProvider;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ScheduledTaskInterceptor;
@@ -35,9 +36,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,13 +82,16 @@ public class Assist implements Closeable {
         }
     }
 
-    private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
+    private final Map<ClassQualifier, List<AssistProvider>> map = new HashMap<>(128);
     private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
 
     private final java.lang.ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new java.lang.ThreadLocal<>();
+
+    private final Lock setLock = new ReentrantLock();
+    private final Lock createLock = new ReentrantLock();
 
     /**
      * Create a new Assist instance.
@@ -208,17 +213,18 @@ public class Assist implements Closeable {
      *                  implementations of the same interface
      * @return A Provider that can supply a class that satisfies the given type and qualifier
      */
+    @SuppressWarnings("unchecked")
     public <T> Provider<T> providerFor(Class<T> type, Annotation qualifier) {
         Objects.requireNonNull(type);
         ClassQualifier classQualifier = new ClassQualifier(type, qualifier);
-        return getProvider(classQualifier, () -> {
-            if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
-                throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create interfaces/abstract classes");
+        return getProvider(classQualifier, (t, q) -> {
+            if (t.isInterface() || Modifier.isAbstract(t.getModifiers())) {
+                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create interfaces/abstract classes");
             }
-            if (qualifier != null) {
-                throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create qualified provider");
+            if (q != null) {
+                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create qualified provider");
             }
-            return buildProvider(type);
+            return buildProvider(t);
         });
     }
 
@@ -326,15 +332,19 @@ public class Assist implements Closeable {
         List<FactoryMethodProvider> eagerFactories = new LinkedList<>();
         for (Method method : reflector.methods()) {
             if (method.isAnnotationPresent(Factory.class)) {
+                Factory factoryAnnotation = method.getAnnotation(Factory.class);
                 Class<?> returnType = method.getReturnType();
                 if (returnType == Void.TYPE) {
-                    throw new IllegalArgumentException(config.getClass().getSimpleName() + ": factory methods may not return void: " + method);
+                    throw new IllegalArgumentException(config.getClass().getSimpleName() + ": factory methods may not return void: " + Reflector.detailString(method));
                 }
 
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
                 Annotation scope = Reflector.getScope(method);
 
                 AssistProvider p = factory;
+                if (!factoryAnnotation.skipInjection()) {
+                    p = wrapInjection(p);
+                }
                 p = wrapAspects(method, returnType, p);
                 p = wrapScope(scope, p);
 
@@ -414,6 +424,10 @@ public class Assist implements Closeable {
         }
     }
 
+    private <T> AssistProvider<T> wrapInjection(AssistProvider<T> provider) {
+        return new InjectionProvider<>(provider, this);
+    }
+
     private <T> AssistProvider<T> wrapScope(Annotation scope, AssistProvider<T> provider) {
         if (scope == null) {
             return provider;
@@ -466,6 +480,7 @@ public class Assist implements Closeable {
         Reflector ref = Reflector.of(concreteImplementation);
         Annotation scope = ref.scope();
         AssistProvider<T> provider = new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this);
+        provider = wrapInjection(provider);
         setProvider(interfaceOrAbstract, ref.qualifier(), wrapScope(scope, provider));
     }
 
@@ -519,19 +534,22 @@ public class Assist implements Closeable {
      * @param provider The provider
      * @throws IllegalArgumentException if the type/qualifier combination already exists for a Provider
      */
-    public <T> void setProvider(Class<T> type, Annotation qualifier, Provider<T> provider) {
-        synchronized (map) {
+    public <T> void setProvider(Class<T> type, Annotation qualifier, AssistProvider<T> provider) {
+        setLock.lock();
+        try {
             // check if there is already a matching provider registered
-            List<Provider> providers = map.get(new ClassQualifier(type, qualifier));
+            List<AssistProvider> providers = map.get(new ClassQualifier(type, qualifier));
             if (providers != null) {
                 // there is already an exact matching provider for the type/qualifier combination, can't add this one
                 throw new IllegalArgumentException("provider for [" + type + "/" + qualifier + "] already exists");
             }
             // register this provider under all classes in its hierarchy
             for (Class<?> superType : Reflector.of(type).hierarchy()) {
-                List<Provider> list = map.computeIfAbsent(new ClassQualifier(superType, qualifier), t -> new LinkedList<>());
+                List<AssistProvider> list = map.computeIfAbsent(new ClassQualifier(superType, qualifier), t -> new LinkedList<>());
                 list.add(provider);
             }
+        } finally {
+            setLock.unlock();
         }
     }
 
@@ -549,7 +567,7 @@ public class Assist implements Closeable {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);
             Annotation qualifier = Reflector.of(type).qualifier();
-            Provider<?> provider = getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type));
+            Provider<?> provider = getProvider(new ClassQualifier(type, qualifier), (t, q) -> buildProvider(t));
             if (provider != null) {
                 provider.get();
             }
@@ -574,7 +592,7 @@ public class Assist implements Closeable {
      * @return A new Provider that will provide scoped instances of the given type
      */
     public <T> AssistProvider<T> buildProvider(Class<T> type) {
-        return wrapScope(Reflector.getScope(type), new ConstructorProvider<>(type, this));
+        return wrapScope(Reflector.getScope(type), wrapInjection(new ConstructorProvider<>(type, this)));
     }
 
     /**
@@ -758,7 +776,7 @@ public class Assist implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Provider<T> getProvider(ClassQualifier classQualifier, Supplier<Provider<T>> ifMissing) {
+    private <T> Provider<T> getProvider(ClassQualifier classQualifier, BiFunction<Class, Annotation, AssistProvider<T>> ifMissing) {
         // check overrides first
         Map<ClassQualifier, Provider> overrideMap = threadLocalOverrides.get();
         if (overrideMap != null) {
@@ -769,7 +787,7 @@ public class Assist implements Closeable {
         }
 
         // now look in the real provider store
-        List<Provider> providers = map.get(classQualifier);
+        List<AssistProvider> providers = map.get(classQualifier);
         if (providers != null && !providers.isEmpty()) {
             return providers.get(0);
         }
@@ -778,15 +796,18 @@ public class Assist implements Closeable {
             return null;
         }
 
-        synchronized (map) {
+        createLock.lock();
+        try {
             providers = map.get(classQualifier);
             if (providers != null && !providers.isEmpty()) {
                 return providers.get(0);
             }
 
-            Provider<T> created = ifMissing.get();
+            AssistProvider<T> created = ifMissing.apply(classQualifier.type(), classQualifier.qualifier());
             setProvider(classQualifier.type(), classQualifier.qualifier(), created);
             return created;
+        } finally {
+            createLock.unlock();
         }
     }
 

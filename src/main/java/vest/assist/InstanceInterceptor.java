@@ -6,7 +6,6 @@ package vest.assist;
  *
  * @see vest.assist.provider.InjectAnnotationInterceptor
  */
-@FunctionalInterface
 public interface InstanceInterceptor extends Prioritized {
 
     /**

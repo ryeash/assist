@@ -9,12 +9,24 @@ import java.util.List;
  */
 public interface AssistProvider<T> extends Provider<T> {
 
+    /**
+     * The type provided.
+     */
     Class<T> type();
 
+    /**
+     * The provider qualifier, or null if there isn't one.
+     */
     Annotation qualifier();
 
+    /**
+     * The scope of the provider, or null is there isn't one.
+     */
     Annotation scope();
 
+    /**
+     * All annotations associated with the provided type.
+     */
     List<Annotation> annotations();
 
 }
