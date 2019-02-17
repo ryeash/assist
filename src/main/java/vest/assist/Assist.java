@@ -7,7 +7,6 @@ import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.AspectWeaverProvider;
-import vest.assist.provider.AssistProviderWrapper;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
@@ -36,7 +35,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,7 +80,7 @@ public class Assist implements Closeable {
         }
     }
 
-    private final ProviderIndex index = new ProviderIndex();
+    private final Map<ClassQualifier, List<Provider>> map = new ConcurrentHashMap<>(64, .9F, 2);
     private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
@@ -207,22 +208,15 @@ public class Assist implements Closeable {
      *                  implementations of the same interface
      * @return A Provider that can supply a class that satisfies the given type and qualifier
      */
-    @SuppressWarnings("unchecked")
     public <T> Provider<T> providerFor(Class<T> type, Annotation qualifier) {
         Objects.requireNonNull(type);
         ClassQualifier classQualifier = new ClassQualifier(type, qualifier);
-        if (threadLocalOverrides.get() != null) {
-            Provider provider = threadLocalOverrides.get().get(classQualifier);
-            if (provider != null) {
-                return provider;
+        return getProvider(classQualifier, () -> {
+            if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+                throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create interfaces/abstract classes");
             }
-        }
-        return index.getOrCreate(type, qualifier, (t, q) -> {
-            if (t.isInterface() || Modifier.isAbstract(t.getModifiers())) {
-                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create interfaces/abstract classes");
-            }
-            if (q != null) {
-                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create qualified provider");
+            if (qualifier != null) {
+                throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create qualified provider");
             }
             return buildProvider(type);
         });
@@ -249,7 +243,12 @@ public class Assist implements Closeable {
      */
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type) {
-        return index.getProviders(type).map(p -> (Provider<T>) p);
+        return map.entrySet()
+                .stream()
+                .filter(e -> type.isAssignableFrom(e.getKey().type()))
+                .flatMap(e -> e.getValue().stream())
+                .distinct()
+                .map(p -> (Provider<T>) p);
     }
 
     /**
@@ -261,19 +260,11 @@ public class Assist implements Closeable {
      */
     @SuppressWarnings("unchecked")
     public <T> Stream<Provider<T>> providersFor(Class<T> type, Annotation qualifier) {
-        return index.getProviders(type)
-                .filter(ap -> Objects.equals(ap.qualifier(), qualifier))
+        return map.entrySet().stream()
+                .filter(e -> type.isAssignableFrom(e.getKey().type()) && Objects.equals(qualifier, e.getKey().qualifier()))
+                .flatMap(e -> e.getValue().stream())
+                .distinct()
                 .map(p -> (Provider<T>) p);
-    }
-
-    /**
-     * Get all registered providers that have the given annotation.
-     *
-     * @param type the annotation type
-     * @return A stream of all registered providers with the given annotation type
-     */
-    public Stream<Provider<?>> providersForAnnotation(Class<? extends Annotation> type) {
-        return index.getProvidersWithAnnotation(type).map(p -> (Provider<?>) p);
     }
 
     /**
@@ -348,15 +339,10 @@ public class Assist implements Closeable {
                 p = wrapScope(scope, p);
 
                 log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), p);
-                index.setProvider(p);
+                setProvider(method.getReturnType(), factory.qualifier(), p);
                 if (factory.qualifier() != null && factory.isPrimary()) {
                     log.info("\\- will be added as primary provider");
-                    index.setProvider(new AssistProviderWrapper<Object>(p) {
-                        @Override
-                        public Annotation qualifier() {
-                            return null;
-                        }
-                    });
+                    setProvider(method.getReturnType(), null, p);
                 }
                 if (factory.isEager()) {
                     eagerFactories.add(factory);
@@ -477,8 +463,10 @@ public class Assist implements Closeable {
         if (concreteImplementation.isInterface() || Modifier.isAbstract(concreteImplementation.getModifiers())) {
             throw new IllegalArgumentException("second argument must be a concrete class");
         }
+        Reflector ref = Reflector.of(concreteImplementation);
+        Annotation scope = ref.scope();
         AssistProvider<T> provider = new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this);
-        index.setProvider(provider);
+        setProvider(interfaceOrAbstract, ref.qualifier(), wrapScope(scope, provider));
     }
 
     /**
@@ -512,7 +500,7 @@ public class Assist implements Closeable {
      */
     public boolean hasProvider(Class<?> type, Annotation qualifier) {
         Objects.requireNonNull(type);
-        return index.exists(type, qualifier);
+        return getProvider(new ClassQualifier(type, qualifier), null) != null;
     }
 
     /**
@@ -522,7 +510,29 @@ public class Assist implements Closeable {
      * @param instance The instance to register
      */
     public <T> void setSingleton(Class<? super T> type, T instance) {
-        index.setProvider(new AdHocProvider<>(type, null, instance));
+        setProvider(type, null, new AdHocProvider<>(instance));
+    }
+
+    /**
+     * Set a provider.
+     *
+     * @param provider The provider
+     * @throws IllegalArgumentException if the type/qualifier combination already exists for a Provider
+     */
+    public <T> void setProvider(Class<T> type, Annotation qualifier, Provider<T> provider) {
+        synchronized (map) {
+            // check if there is already a matching provider registered
+            List<Provider> providers = map.get(new ClassQualifier(type, qualifier));
+            if (providers != null) {
+                // there is already an exact matching provider for the type/qualifier combination, can't add this one
+                throw new IllegalArgumentException("provider for [" + type + "/" + qualifier + "] already exists");
+            }
+            // register this provider under all classes in its hierarchy
+            for (Class<?> superType : Reflector.of(type).hierarchy()) {
+                List<Provider> list = map.computeIfAbsent(new ClassQualifier(superType, qualifier), t -> new LinkedList<>());
+                list.add(provider);
+            }
+        }
     }
 
     /**
@@ -539,7 +549,7 @@ public class Assist implements Closeable {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);
             Annotation qualifier = Reflector.of(type).qualifier();
-            Provider<?> provider = index.getOrCreate(type, qualifier, (t, q) -> buildProvider(t));
+            Provider<?> provider = getProvider(new ClassQualifier(type, qualifier), () -> buildProvider(type));
             if (provider != null) {
                 provider.get();
             }
@@ -720,13 +730,16 @@ public class Assist implements Closeable {
                     .append("\n");
         }
 
-        sb.append("Providers(").append(index.size()).append("):");
-        index.allProviders()
-                .sorted(Comparator.comparing(assistProvider -> assistProvider.type().getSimpleName()))
-                .collect(Collectors.groupingBy(AssistProvider::type, LinkedHashMap::new, Collectors.toSet()))
+        sb.append("Providers(").append(map.size()).append("):");
+        map.keySet().stream()
+                .sorted(Comparator.comparing(cq -> cq.type().getSimpleName()))
+                .collect(Collectors.groupingBy(ClassQualifier::type, LinkedHashMap::new, Collectors.toSet()))
                 .forEach((type, c) -> {
                     sb.append("\n  ").append(type.getSimpleName());
-                    c.forEach(s -> sb.append("\n    ").append(s));
+                    c.stream()
+                            .flatMap(cq -> map.get(cq).stream().map(String::valueOf))
+                            .sorted()
+                            .forEach(s -> sb.append("\n    ").append(s));
                 });
 
         return sb.toString();
@@ -743,4 +756,38 @@ public class Assist implements Closeable {
     public void autoShutdown() {
         Runtime.getRuntime().addShutdownHook(new Thread(this::close, "assist-shutdown"));
     }
+
+    @SuppressWarnings("unchecked")
+    private <T> Provider<T> getProvider(ClassQualifier classQualifier, Supplier<Provider<T>> ifMissing) {
+        // check overrides first
+        Map<ClassQualifier, Provider> overrideMap = threadLocalOverrides.get();
+        if (overrideMap != null) {
+            Provider provider = overrideMap.get(classQualifier);
+            if (provider != null) {
+                return provider;
+            }
+        }
+
+        // now look in the real provider store
+        List<Provider> providers = map.get(classQualifier);
+        if (providers != null && !providers.isEmpty()) {
+            return providers.get(0);
+        }
+
+        if (ifMissing == null) {
+            return null;
+        }
+
+        synchronized (map) {
+            providers = map.get(classQualifier);
+            if (providers != null && !providers.isEmpty()) {
+                return providers.get(0);
+            }
+
+            Provider<T> created = ifMissing.get();
+            setProvider(classQualifier.type(), classQualifier.qualifier(), created);
+            return created;
+        }
+    }
+
 }
