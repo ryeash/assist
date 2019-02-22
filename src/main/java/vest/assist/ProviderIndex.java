@@ -2,11 +2,13 @@ package vest.assist;
 
 import javax.inject.Provider;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -16,7 +18,7 @@ import java.util.stream.Stream;
 class ProviderIndex {
 
     private final Node root = new Node();
-    private final Map<Class, Node> inverse = new HashMap<>(128);
+    private final Map<Class, List<Node>> inverse = new HashMap<>(128);
     private final Map<Class<? extends Annotation>, List<AssistProvider>> annotationTypeToProvider = new HashMap<>(128);
     private final Lock writeLock = new ReentrantLock();
     private final Lock createLock = new ReentrantLock();
@@ -31,7 +33,7 @@ class ProviderIndex {
             Node temp = root;
             for (Class type : Reflector.of(provider.type()).hierarchy()) {
                 temp = temp.getOrCreate(type);
-                inverse.put(type, temp);
+                inverse.computeIfAbsent(type, v -> new ArrayList<>()).add(temp);
             }
             temp.putProvider(provider);
 
@@ -45,14 +47,21 @@ class ProviderIndex {
     }
 
     public Provider getProvider(Class type, Annotation qualifier) {
-        Node node = inverse.get(type);
-        if (node != null) {
-            Provider provider = node.getProvider(qualifier);
-            if (provider != null) {
-                return provider;
-            }
-        }
-        return null;
+        return Optional.ofNullable(inverse.get(type))
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(n -> n.getProvider(qualifier))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+//        Node node = inverse.get(type);
+//        if (node != null) {
+//            Provider provider = node.getProvider(qualifier);
+//            if (provider != null) {
+//                return provider;
+//            }
+//        }
+//        return null;
     }
 
     public Provider getOrCreate(Class type, Annotation qualifier, BiFunction<Class, Annotation, AssistProvider<?>> function) {
@@ -75,12 +84,17 @@ class ProviderIndex {
     }
 
     public Stream<AssistProvider> getProviders(Class type) {
-        Node node = inverse.get(type);
-        if (node != null) {
-            return node.getProviders();
-        } else {
-            return Stream.empty();
-        }
+        return Optional.ofNullable(inverse.get(type))
+                .orElse(Collections.emptyList())
+                .stream()
+                .flatMap(Node::getProviders)
+                .distinct();
+//        Node node = inverse.get(type);
+//        if (node != null) {
+//            return node.getProviders();
+//        } else {
+//            return Stream.empty();
+//        }
     }
 
     public Stream<AssistProvider> getProvidersWithAnnotation(Class<? extends Annotation> type) {
@@ -88,9 +102,10 @@ class ProviderIndex {
     }
 
     public boolean exists(Class type, Annotation qualifier) {
-        return Optional.ofNullable(inverse.get(type))
-                .map(n -> n.getProvider(qualifier))
-                .isPresent();
+        return getProvider(type, qualifier) != null;
+//        return Optional.ofNullable(inverse.get(type))
+//                .map(n -> n.getProvider(qualifier))
+//                .isPresent();
     }
 
     public Stream<AssistProvider> allProviders() {

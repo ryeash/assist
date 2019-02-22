@@ -85,7 +85,7 @@ public class Assist implements Closeable {
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
 
-    private final java.lang.ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new java.lang.ThreadLocal<>();
+    private final ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new ThreadLocal<>();
 
     /**
      * Create a new Assist instance.
