@@ -1,6 +1,7 @@
 package vest.assist.provider;
 
 import vest.assist.Assist;
+import vest.assist.AssistProvider;
 import vest.assist.Reflector;
 
 import javax.inject.Inject;
@@ -19,28 +20,40 @@ import java.util.List;
  * constructor with the @Inject annotation are considered for auto creation. If neither kind of constructor is found,
  * creation of this class will fail with a RuntimeException.
  */
-public class ConstructorProvider<T> extends AbstractProvider<T> {
+public class ConstructorProvider<T> implements AssistProvider<T> {
 
+    private final Class<T> advertisedType;
+    private final Class<? extends T> realType;
+    private final Assist assist;
     private final Constructor<T> constructor;
     private final Parameter[] constructorParameters;
     private final List<Annotation> annotations;
     private final Annotation scope;
+    private final Annotation qualifier;
 
     public ConstructorProvider(Class<T> type, Assist assist) {
         this(type, type, assist);
     }
 
     public ConstructorProvider(Class<T> advertisedType, Class<? extends T> realType, Assist assist) {
-        super(assist, advertisedType, Reflector.getQualifier(realType));
+        this.advertisedType = advertisedType;
+        this.realType = realType;
+        this.assist = assist;
         this.constructor = injectableConstructor(realType);
         this.constructorParameters = this.constructor.getParameters();
         this.annotations = Collections.unmodifiableList(Arrays.asList(realType.getAnnotations()));
         this.scope = Reflector.getScope(realType);
+        this.qualifier = Reflector.getQualifier(realType);
+    }
+
+    @Override
+    public Class<T> type() {
+        return advertisedType;
     }
 
     @Override
     public Annotation qualifier() {
-        return super.qualifier();
+        return qualifier;
     }
 
     @Override
@@ -54,7 +67,7 @@ public class ConstructorProvider<T> extends AbstractProvider<T> {
     }
 
     @Override
-    protected T create() {
+    public T get() {
         try {
             return constructor.newInstance(assist.getParameterValues(constructorParameters));
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {

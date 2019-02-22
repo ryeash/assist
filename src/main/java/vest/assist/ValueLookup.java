@@ -4,7 +4,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;
 
 /**
- * Defines a class that can find injectable values. During injection, the Assist will iterate through
+ * Defines a class that can find injectable values. During injection, assist will iterate through
  * the registered ValueLookups requesting a value until one returns a non-null value, once found that value is returned
  * and the iteration stops.
  */

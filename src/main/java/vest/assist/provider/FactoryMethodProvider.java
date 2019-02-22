@@ -1,6 +1,7 @@
 package vest.assist.provider;
 
 import vest.assist.Assist;
+import vest.assist.AssistProvider;
 import vest.assist.Reflector;
 import vest.assist.annotations.Factory;
 
@@ -16,8 +17,12 @@ import java.util.Objects;
 /**
  * A provider instance that creates objects using a method (e.g. a @Factory method from a configuration object)
  */
-public class FactoryMethodProvider<T> extends AbstractProvider<T> {
+public class FactoryMethodProvider<T> implements AssistProvider<T> {
 
+    private final Assist assist;
+    private final Class<T> type;
+    private final Annotation qualifier;
+    private final Annotation scope;
     private final Method method;
     private final Parameter[] methodParameters;
     private final Object instance;
@@ -27,7 +32,10 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
 
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {
-        super(assist, (Class<T>) method.getReturnType(), Reflector.getQualifier(method));
+        this.type = (Class<T>) method.getReturnType();
+        this.qualifier = Reflector.getQualifier(method);
+        this.scope = Reflector.getScope(method);
+        this.assist = assist;
         Reflector.makeAccessible(method);
         this.method = method;
         this.methodParameters = method.getParameters();
@@ -45,13 +53,28 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
     }
 
     @Override
+    public Class<T> type() {
+        return type;
+    }
+
+    @Override
+    public Annotation qualifier() {
+        return qualifier;
+    }
+
+    @Override
+    public Annotation scope() {
+        return scope;
+    }
+
+    @Override
     public List<Annotation> annotations() {
         return annotations;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected T create() {
+    public T get() {
         try {
             T t = (T) method.invoke(instance, assist.getParameterValues(methodParameters));
             if (t == null) {
@@ -61,14 +84,6 @@ public class FactoryMethodProvider<T> extends AbstractProvider<T> {
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("error invoking method: " + Reflector.detailString(method), e);
         }
-    }
-
-    @Override
-    protected T inject(T instance) {
-        if (factory.skipInjection()) {
-            return instance;
-        }
-        return super.inject(instance);
     }
 
     @Override
