@@ -3,9 +3,10 @@ package vest.assist;
 import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +20,7 @@ class ProviderIndex {
 
     private final Node root = new Node();
     private final Map<Class, List<Node>> inverse = new HashMap<>(128);
-    private final Map<Class<? extends Annotation>, List<AssistProvider>> annotationTypeToProvider = new HashMap<>(128);
+    private final Map<Class<? extends Annotation>, Collection<AssistProvider>> annotationTypeToProvider = new HashMap<>(128);
     private final Lock writeLock = new ReentrantLock();
     private int size = 0;
 
@@ -37,7 +38,7 @@ class ProviderIndex {
             temp.putProvider(provider);
 
             for (Annotation annotation : provider.annotations()) {
-                annotationTypeToProvider.computeIfAbsent(annotation.annotationType(), a -> new LinkedList<>()).add(provider);
+                annotationTypeToProvider.computeIfAbsent(annotation.annotationType(), a -> new HashSet<>()).add(provider);
             }
             size++;
         } finally {

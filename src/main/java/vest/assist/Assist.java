@@ -7,12 +7,12 @@ import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.AspectWeaverProvider;
-import vest.assist.provider.AssistProviderWrapper;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
 import vest.assist.provider.InjectionProvider;
 import vest.assist.provider.LazyProvider;
+import vest.assist.provider.PrimaryProvider;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
@@ -349,12 +349,7 @@ public class Assist implements Closeable {
                 index.setProvider(p);
                 if (factory.qualifier() != null && factory.isPrimary()) {
                     log.info("\\- will be added as primary provider");
-                    index.setProvider(new AssistProviderWrapper<Object>(p) {
-                        @Override
-                        public Annotation qualifier() {
-                            return null;
-                        }
-                    });
+                    index.setProvider(new PrimaryProvider<>(p));
                 }
                 if (factory.isEager()) {
                     eagerFactories.add(factory);
@@ -704,24 +699,24 @@ public class Assist implements Closeable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Scopes:\n  ")
+        sb.append("Assist:\n");
+        sb.append(" Scopes:\n  ")
                 .append(scopeFactories.entrySet().stream()
                         .map(e -> '@' + e.getKey().getSimpleName() + ':' + e.getValue().getClass().getSimpleName())
                         .collect(Collectors.joining("\n  ")))
                 .append("\n");
 
-        sb.append("Interceptors:\n  ")
+        sb.append(" Interceptors:\n  ")
                 .append(interceptors.stream().map(i -> i.toString() + ":" + i.priority()).collect(Collectors.joining("\n  ")))
                 .append("\n");
 
         if (!valueLookups.isEmpty()) {
-            sb.append(ValueLookup.class.getSimpleName())
-                    .append(":\n  ")
+            sb.append(" Lookups:\n  ")
                     .append(valueLookups.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining("\n  ")))
                     .append("\n");
         }
 
-        sb.append("Providers(").append(index.size()).append("):");
+        sb.append(" Providers(").append(index.size()).append("):");
         index.allProviders()
                 .sorted(Comparator.comparing(assistProvider -> assistProvider.type().getSimpleName()))
                 .collect(Collectors.groupingBy(AssistProvider::type, LinkedHashMap::new, Collectors.toSet()))
@@ -742,6 +737,6 @@ public class Assist implements Closeable {
      * Add a shutdown hook to call {@link #close()} on this Assist instance.
      */
     public void autoShutdown() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::close, "assist-shutdown"));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::close, "assist-shutdown-" + hashCode()));
     }
 }
