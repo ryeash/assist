@@ -1,8 +1,8 @@
 package vest.assist.provider;
 
+import vest.assist.AssistProvider;
 import vest.assist.ScopeFactory;
 
-import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 
@@ -18,18 +18,17 @@ public class SingletonScopeFactory implements ScopeFactory<Singleton> {
     }
 
     @Override
-    public <T> Provider<T> scope(Provider<T> provider, Annotation scope) {
+    public <T> AssistProvider<T> scope(AssistProvider<T> provider, Annotation scope) {
         return new SingletonProvider<>(provider);
     }
 
-    public static final class SingletonProvider<T> implements Provider<T> {
+    public static final class SingletonProvider<T> extends AssistProviderWrapper<T> {
 
-        private Provider<T> provider;
         private volatile boolean initialized = false;
         private T value;
 
-        public SingletonProvider(Provider<T> provider) {
-            this.provider = provider;
+        public SingletonProvider(AssistProvider<T> provider) {
+            super(provider);
         }
 
         @Override
@@ -37,7 +36,7 @@ public class SingletonScopeFactory implements ScopeFactory<Singleton> {
             if (!initialized) {
                 synchronized (this) {
                     if (!initialized) {
-                        value = provider.get();
+                        value = super.get();
                         initialized = true;
                     }
                 }
@@ -47,7 +46,7 @@ public class SingletonScopeFactory implements ScopeFactory<Singleton> {
 
         @Override
         public String toString() {
-            return "@Singleton{" + provider + "}";
+            return "@Singleton{" + super.toString() + "}";
         }
     }
 }

@@ -14,6 +14,7 @@ public class TCOptional {
     @Inject
     public void injectOptional(Optional<CoffeeMaker> optionalCoffee, Optional<JFrame> optionalFrame) {
         Assert.assertTrue(optionalCoffee.isPresent());
+        Assert.assertTrue(optionalCoffee.get() instanceof CoffeeMaker);
         Assert.assertFalse(optionalFrame.isPresent());
     }
 }

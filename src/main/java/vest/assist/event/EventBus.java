@@ -26,7 +26,7 @@ public class EventBus {
      * Create a new EventBus. A new single threaded {@link ExecutorService} will be created to service the published events.
      */
     public EventBus() {
-        this.executorService = Executors.newSingleThreadExecutor();
+        this(Executors.newSingleThreadExecutor());
     }
 
     /**

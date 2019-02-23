@@ -10,7 +10,6 @@ import vest.assist.annotations.Scheduled;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.LoggingAspect;
 import vest.assist.app.Teapot;
-import vest.assist.provider.AdHocProvider;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -48,7 +47,7 @@ public class AssistNegativeTest extends Assert {
     @Test(expectedExceptions = RuntimeException.class)
     public void testDoubleSetProvider() {
         Provider<Teapot> p = assist.providerFor(Teapot.class);
-        assist.setProvider(Teapot.class, null, new AdHocProvider<>(p.get()));
+        assist.setSingleton(Teapot.class, p.get());
     }
 
     @Test(expectedExceptions = RuntimeException.class)

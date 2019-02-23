@@ -1,9 +1,9 @@
 package vest.assist.provider;
 
+import vest.assist.AssistProvider;
 import vest.assist.ScopeFactory;
 import vest.assist.annotations.ThreadLocal;
 
-import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 
 /**
@@ -19,33 +19,32 @@ public class ThreadLocalScopeFactory implements ScopeFactory<ThreadLocal> {
     }
 
     @Override
-    public <T> Provider<T> scope(Provider<T> provider, Annotation scope) {
+    public <T> AssistProvider<T> scope(AssistProvider<T> provider, Annotation scope) {
         if (threadLocal.get() == null) {
             threadLocal.set(provider.get());
         }
         return new ThreadLocalProvider<>(provider);
     }
 
-    public static final class ThreadLocalProvider<T> implements Provider<T> {
+    public static final class ThreadLocalProvider<T> extends AssistProviderWrapper<T> {
 
         private final java.lang.ThreadLocal<T> threadLocal = new java.lang.ThreadLocal<>();
-        private final Provider<T> provider;
 
-        public ThreadLocalProvider(Provider<T> provider) {
-            this.provider = provider;
+        public ThreadLocalProvider(AssistProvider<T> provider) {
+            super(provider);
         }
 
         @Override
         public T get() {
             if (threadLocal.get() == null) {
-                threadLocal.set(provider.get());
+                threadLocal.set(super.get());
             }
             return threadLocal.get();
         }
 
         @Override
         public String toString() {
-            return "@ThreadLocal{" + provider + "}";
+            return "@ThreadLocal{" + super.toString() + "}";
         }
     }
 }

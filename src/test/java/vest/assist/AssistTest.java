@@ -442,4 +442,15 @@ public class AssistTest extends Assert {
         TCSkipInjection tc = assist.instance(TCSkipInjection.class);
         assertNull(tc.coffeMaker);
     }
+
+    @Test
+    public void providersForAnnotation() {
+        List<Provider<?>> collect = assist.providersForAnnotation(Named.class).collect(Collectors.toList());
+        assertFalse(collect.isEmpty());
+        for (Provider<?> provider : collect) {
+            log.info("{}", provider);
+        }
+        assertTrue(collect.contains(assist.providerFor(InputStream.class, "bais")));
+        assertTrue(collect.contains(assist.providerFor(CoffeeMaker.class, "keurig")));
+    }
 }

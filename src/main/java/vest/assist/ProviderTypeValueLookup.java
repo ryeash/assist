@@ -74,7 +74,7 @@ public final class ProviderTypeValueLookup implements ValueLookup {
     private Object optional(Type genericType, AnnotatedElement annotatedElement) {
         Annotation qualifier = Reflector.getQualifier(annotatedElement);
         Class<?> realType = getRealType(annotatedElement, genericType);
-        return assist.providersFor(realType, qualifier).findAny();
+        return assist.providersFor(realType, qualifier).findAny().map(Provider::get);
     }
 
     @Override
