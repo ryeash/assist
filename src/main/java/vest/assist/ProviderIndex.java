@@ -21,7 +21,6 @@ class ProviderIndex {
     private final Map<Class, List<Node>> inverse = new HashMap<>(128);
     private final Map<Class<? extends Annotation>, List<AssistProvider>> annotationTypeToProvider = new HashMap<>(128);
     private final Lock writeLock = new ReentrantLock();
-    private final Lock createLock = new ReentrantLock();
     private int size = 0;
 
     ProviderIndex() {
@@ -33,15 +32,15 @@ class ProviderIndex {
             Node temp = root;
             for (Class type : Reflector.of(provider.type()).hierarchy()) {
                 temp = temp.getOrCreate(type);
-                inverse.computeIfAbsent(type, v -> new ArrayList<>()).add(temp);
+                inverse.computeIfAbsent(type, v -> new ArrayList<>(3)).add(temp);
             }
             temp.putProvider(provider);
 
             for (Annotation annotation : provider.annotations()) {
                 annotationTypeToProvider.computeIfAbsent(annotation.annotationType(), a -> new LinkedList<>()).add(provider);
             }
-        } finally {
             size++;
+        } finally {
             writeLock.unlock();
         }
     }
@@ -54,14 +53,6 @@ class ProviderIndex {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-//        Node node = inverse.get(type);
-//        if (node != null) {
-//            Provider provider = node.getProvider(qualifier);
-//            if (provider != null) {
-//                return provider;
-//            }
-//        }
-//        return null;
     }
 
     public Provider getOrCreate(Class type, Annotation qualifier, BiFunction<Class, Annotation, AssistProvider<?>> function) {
@@ -69,7 +60,7 @@ class ProviderIndex {
         if (provider != null) {
             return provider;
         }
-        createLock.lock();
+        writeLock.lock();
         try {
             provider = getProvider(type, qualifier);
             if (provider == null) {
@@ -79,7 +70,7 @@ class ProviderIndex {
             }
             return provider;
         } finally {
-            createLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -89,12 +80,6 @@ class ProviderIndex {
                 .stream()
                 .flatMap(Node::getProviders)
                 .distinct();
-//        Node node = inverse.get(type);
-//        if (node != null) {
-//            return node.getProviders();
-//        } else {
-//            return Stream.empty();
-//        }
     }
 
     public Stream<AssistProvider> getProvidersWithAnnotation(Class<? extends Annotation> type) {
@@ -103,9 +88,6 @@ class ProviderIndex {
 
     public boolean exists(Class type, Annotation qualifier) {
         return getProvider(type, qualifier) != null;
-//        return Optional.ofNullable(inverse.get(type))
-//                .map(n -> n.getProvider(qualifier))
-//                .isPresent();
     }
 
     public Stream<AssistProvider> allProviders() {
