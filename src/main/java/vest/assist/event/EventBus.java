@@ -52,10 +52,12 @@ public class EventBus {
                 .filter(method -> method.isAnnotationPresent(EventListener.class))
                 .peek(method -> {
                     if (!Modifier.isPublic(method.getModifiers())) {
-                        throw new IllegalStateException("@EventListener methods must be public");
+                        throw new IllegalStateException("@EventListener methods must be public: " + Reflector.detailString(method));
+                    }
+                    if (method.getParameterCount() != 1) {
+                        throw new IllegalArgumentException("@EventListener methods must have 1 and only 1 parameter: " + Reflector.detailString(method));
                     }
                 })
-                .filter(method -> method.getParameterCount() == 1)
                 .map(method -> new MethodListener(listener, method, method.getParameterTypes()[0]))
                 .map(SoftReference::new)
                 .forEach(registeredListeners::add);

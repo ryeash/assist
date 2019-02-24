@@ -14,6 +14,7 @@ import vest.assist.provider.InjectionProvider;
 import vest.assist.provider.LazyProvider;
 import vest.assist.provider.PrimaryProvider;
 import vest.assist.provider.PropertyInjector;
+import vest.assist.provider.ProviderTypeValueLookup;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeFactory;
