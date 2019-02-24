@@ -17,19 +17,17 @@ public class AspectWeaverProvider<T> extends AssistProviderWrapper<T> {
 
     private final Assist assist;
     private final Class<? extends Aspect>[] aspects;
-    private final Class<T> type;
 
-    public AspectWeaverProvider(Assist assist, Class<? extends Aspect>[] aspects, Class<T> type, AssistProvider<T> delegate) {
+    public AspectWeaverProvider(Assist assist, Class<? extends Aspect>[] aspects, AssistProvider<T> delegate) {
         super(delegate);
-        if (!type.isInterface()) {
-            throw new IllegalArgumentException("aspects may not be applied to non-interfaces; [" + type + "] may not be assigned aspects");
+        if (!type().isInterface()) {
+            throw new IllegalArgumentException("aspects may not be applied to non-interfaces; [" + type() + "] may not be assigned aspects");
         }
         if (aspects == null || aspects.length == 0) {
             throw new IllegalArgumentException("aspect weaver must be provided at least on aspect type");
         }
         this.assist = Objects.requireNonNull(assist);
         this.aspects = aspects;
-        this.type = Objects.requireNonNull(type);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class AspectWeaverProvider<T> extends AssistProviderWrapper<T> {
         aspect.init(instance);
 
         @SuppressWarnings("unchecked")
-        T t = (T) Proxy.newProxyInstance(type.getClassLoader(), instance.getClass().getInterfaces(), aspect);
+        T t = (T) Proxy.newProxyInstance(type().getClassLoader(), instance.getClass().getInterfaces(), aspect);
         return t;
     }
 }

@@ -90,8 +90,8 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("FactoryMethodProvider{");
-        if (qualifier != null) {
-            sb.append(qualifier).append(":");
+        if (qualifier() != null) {
+            sb.append(qualifier()).append(":");
         }
         sb.append(method).append("}:").append(hashCode());
         return sb.toString();
