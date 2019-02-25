@@ -21,17 +21,20 @@ public class AspectInvocationHandler implements InvocationHandler {
         beforeMethods = new LinkedList<>();
         afterMethods = new LinkedList<>();
         for (Aspect aspect : aspects) {
+            boolean known = false;
             if (aspect instanceof BeforeMethod) {
+                known = true;
                 beforeMethods.add((BeforeMethod) aspect);
-            } else if (aspect instanceof InvokeMethod) {
-                if (invoke != null) {
-                    throw new IllegalArgumentException("only one InvokeMethod aspect may be assigned, found "
-                            + invoke.getClass().getSimpleName() + " and " + aspect.getClass().getSimpleName());
-                }
+            }
+            if (aspect instanceof InvokeMethod) {
+                known = true;
                 invoke = (InvokeMethod) aspect;
-            } else if (aspect instanceof AfterMethod) {
+            }
+            if (aspect instanceof AfterMethod) {
+                known = true;
                 afterMethods.add((AfterMethod) aspect);
-            } else {
+            }
+            if (!known) {
                 throw new IllegalArgumentException("unknown aspect implementation: " + aspect.getClass().getSimpleName());
             }
             aspect.init(instance);

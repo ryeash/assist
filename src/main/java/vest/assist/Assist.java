@@ -330,7 +330,7 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public void addConfig(Object config) {
         Objects.requireNonNull(config, "can not process null configuration class");
-        log.info("processing configuration class: {}", config.getClass().getCanonicalName());
+        log.info("processing configuration class: {}", Reflector.debugName(config.getClass()));
         // create providers from the @Factory methods
         Reflector reflector = Reflector.of(config);
 
@@ -376,7 +376,7 @@ public class Assist implements Closeable {
         // allows e.g. @Inject methods to be called that include any final initialization to happen
         inject(config);
 
-        log.info("Finished processing configuration class {}", config.getClass().getCanonicalName());
+        log.info("Finished processing configuration class {}", Reflector.debugName(config.getClass()));
     }
 
     /**

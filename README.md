@@ -232,26 +232,24 @@ Aspect Oriented Programming (AOP) is supported on @Factory methods with the use 
 You can, for example, add a Logging aspect to a provided instance:
 First define your aspect:
 ```java
-public class LoggingAspect extends Aspect {
+public class LoggingAspect implements BeforeMethod, AfterMethod {
 
     private Logger log;
 
     @Override
     public void init(Object instance) {
-        // when overriding init, don't forget to call super
-        super.init(instance);
         this.log = LoggerFactory.getLogger(instance.getClass());
     }
 
     // before every method invocation, log a message
     @Override
-    public void pre(Invocation invocation) throws Throwable {
+    public void before(Invocation invocation) {
         log.info("entering {}", invocation);
     }
 
     // after every method invocation, log a message
     @Override
-    public void post(Invocation invocation) throws Throwable {
+    public void after(Invocation invocation) {
         log.info("exiting {}", invocation);
     }
 }
@@ -275,17 +273,11 @@ public CoffeeMaker aopFrenchPress2() {
     return new FrenchPress();
 }
 ```
-Keep in mind when using multiple aspects: pre and post methods will be called 
-for all aspects but only the exec method of the last aspect in the array will be called. Also
-the call order of aspects may seem a little unusual at first, pre methods are called first to last, exec is only called for
-the last aspect, then post methods are called last to first. So, in the previous example the call order for the aspects will be:
-```
-LoggingAspect:pre
-TimingAspect:pre
-TimingAspect:exec
-TimingAspect:post
-LoggingAspect:post
-```
+Keep in mind when using multiple aspects only one [InvokeMethod](src/main/java/vest/assist/aop/InvokeMethod.java) 
+implementation can be defined in the list of aspects, if multiple are listed an error will be thrown during config
+processing.
+
+Before and after aspects will be called in the order they are defined.
 
 Assist uses `java.lang.reflect.Proxy` to join the aspect classes with the provided types and as such the @Aspects
 annotation is only usable on methods that return an interface type.
