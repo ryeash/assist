@@ -16,7 +16,7 @@ public class AspectInvocationHandler implements InvocationHandler {
     private InvokeMethod invoke;
     private List<AfterMethod> afterMethods;
 
-    public AspectInvocationHandler(Object instance, Aspect[] aspects) {
+    public AspectInvocationHandler(Object instance, Aspect... aspects) {
         this.instance = instance;
         beforeMethods = new LinkedList<>();
         afterMethods = new LinkedList<>();
@@ -47,25 +47,26 @@ public class AspectInvocationHandler implements InvocationHandler {
     @Override
     public final Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Invocation invocation = new Invocation(instance, method, args);
+        Object result;
         try {
             for (BeforeMethod beforeMethod : beforeMethods) {
                 beforeMethod.before(invocation);
             }
-            invoke.invoke(invocation);
+            result = invoke.invoke(invocation);
         } catch (Throwable t) {
-            invocation.setResult(t);
+            result = t;
         }
         for (AfterMethod afterMethod : afterMethods) {
-            afterMethod.after(invocation);
+            result = afterMethod.after(invocation, result);
         }
-        if (invocation.isError()) {
-            Throwable t = (Throwable) invocation.getResult();
+        if (result instanceof Throwable) {
+            Throwable t = (Throwable) result;
             if (t instanceof InvocationTargetException && t.getCause() != null) {
                 throw t.getCause();
             } else {
                 throw t;
             }
         }
-        return invocation.getResult();
+        return result;
     }
 }

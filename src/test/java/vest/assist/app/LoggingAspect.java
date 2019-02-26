@@ -33,7 +33,7 @@ public class LoggingAspect implements BeforeMethod, AfterMethod {
         invocation.setInstance(invocation.getInstance());
         invocation.setMethod(invocation.getMethod());
         if (invocation.getArgCount() > 0) {
-            log.info("arg0 {}", invocation.getArg(0));
+            log.info("arg0 {}", invocation.getArgs()[0]);
         }
         if (!added) {
             log.info("method has been called before in the same way");
@@ -41,8 +41,9 @@ public class LoggingAspect implements BeforeMethod, AfterMethod {
     }
 
     @Override
-    public void after(Invocation invocation) {
+    public Object after(Invocation invocation, Object result) {
         log.info("exiting {}", invocation);
+        return result;
     }
 
 }

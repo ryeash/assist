@@ -6,11 +6,11 @@ package vest.assist.aop;
 public interface InvokeMethod extends Aspect {
 
     /**
-     * Execute the invoked method performing any additional actions as needed.
-     * Implementations should, at least, call {@link Invocation#invoke()}.
+     * Execute the invoked method, performing any additional actions as needed.
      *
      * @param invocation the invocation
+     * @return the result of the method invocation
      * @throws Throwable for any issue encountered
      */
-    void invoke(Invocation invocation) throws Throwable;
+    Object invoke(Invocation invocation) throws Throwable;
 }

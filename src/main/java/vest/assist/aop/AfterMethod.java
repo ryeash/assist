@@ -9,7 +9,9 @@ public interface AfterMethod extends Aspect {
      * Execute post method invocation actions.
      *
      * @param invocation the invocation
+     * @param result     the result of the method invocation
+     * @return the result of the method invocation
      * @throws Throwable for any issue encountered
      */
-    void after(Invocation invocation) throws Throwable;
+    Object after(Invocation invocation, Object result) throws Throwable;
 }

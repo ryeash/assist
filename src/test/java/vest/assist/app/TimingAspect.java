@@ -13,17 +13,16 @@ public class TimingAspect implements InvokeMethod {
     private static Logger log = LoggerFactory.getLogger(TimingAspect.class);
 
     @Override
-    public void invoke(Invocation invocation) throws Throwable {
+    public Object invoke(Invocation invocation) throws Throwable {
         if (invocation.getMethod().isAnnotationPresent(Timed.class)) {
             long start = System.nanoTime();
             try {
-                invocation.invoke();
-                invocation.setResult(invocation.getResult() + " timed");
+                return invocation.invoke() + " timed";
             } finally {
                 log.info("ran [{}] in {}ms", invocation, (System.nanoTime() - start) / 1_000_000d);
             }
         } else {
-            invocation.invoke();
+            return invocation.invoke();
         }
     }
 }
