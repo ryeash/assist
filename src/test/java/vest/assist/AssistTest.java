@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -361,43 +360,6 @@ public class AssistTest extends Assert {
         assertEquals(prop.integer, 12);
         assertEquals(prop.numbers, Arrays.asList(1D, 1D, 2D, 3D, 5D, 8D, 13D));
         assertEquals(prop.demoEnum, ConfigurationTest.DemoEnum.CHARLIE);
-    }
-
-    @Test
-    public void overridesTest() throws InterruptedException {
-        CoffeeMaker cm = assist.instance(CoffeeMaker.class);
-        assertEquals(cm.getClass(), FrenchPress.class);
-
-        assist.override(CoffeeMaker.class, new Keurig());
-        cm = assist.instance(CoffeeMaker.class);
-        assertEquals(cm.getClass(), Keurig.class);
-
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-            CoffeeMaker inThread = assist.instance(CoffeeMaker.class);
-            assertEquals(inThread.getClass(), FrenchPress.class);
-
-            assist.override(CoffeeMaker.class, new Keurig());
-            inThread = assist.instance(CoffeeMaker.class);
-            assertEquals(inThread.getClass(), Keurig.class);
-            latch.countDown();
-        }).start();
-        latch.await();
-
-        CoffeeMaker keurig = assist.instance(CoffeeMaker.class, "keurig");
-        assist.override(CoffeeMaker.class, "keurig", new Keurig() {
-            @Override
-            public String brew() {
-                return "override";
-            }
-        });
-        CoffeeMaker overriddenKeurig = assist.instance(CoffeeMaker.class, "keurig");
-        assertNotEquals(keurig.brew(), overriddenKeurig.brew());
-        assertEquals(overriddenKeurig.brew(), "override");
-
-        assist.clearOverrides();
-        cm = assist.instance(CoffeeMaker.class);
-        assertEquals(cm.getClass(), FrenchPress.class);
     }
 
     @Test

@@ -12,9 +12,9 @@ import java.util.List;
 public class AspectInvocationHandler implements InvocationHandler {
 
     protected final Object instance;
-    private List<BeforeMethod> beforeMethods;
+    private final List<BeforeMethod> beforeMethods;
     private InvokeMethod invoke;
-    private List<AfterMethod> afterMethods;
+    private final List<AfterMethod> afterMethods;
 
     public AspectInvocationHandler(Object instance, Aspect... aspects) {
         this.instance = instance;

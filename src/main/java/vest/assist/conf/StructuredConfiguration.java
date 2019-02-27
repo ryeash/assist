@@ -47,8 +47,8 @@ import static java.io.StreamTokenizer.TT_EOL;
  */
 public class StructuredConfiguration implements ConfigurationSource {
 
-    private URL propertyFile;
-    private String levelDelimiter;
+    private final URL propertyFile;
+    private final String levelDelimiter;
     private Map<String, String> properties;
 
     public StructuredConfiguration(URL url) {

@@ -111,14 +111,10 @@ public class EventBus {
     }
 
     private static abstract class EListener implements Consumer<Object> {
-        protected Class type;
+        protected final Class type;
 
         protected EListener(Class type) {
             this.type = type;
-        }
-
-        public Class type() {
-            return type;
         }
 
         public boolean canAccept(Object o) {

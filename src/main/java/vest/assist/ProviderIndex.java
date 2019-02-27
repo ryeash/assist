@@ -38,7 +38,7 @@ class ProviderIndex {
             temp.putProvider(provider);
 
             for (Annotation annotation : provider.annotations()) {
-                annotationTypeToProvider.computeIfAbsent(annotation.annotationType(), a -> new HashSet<>()).add(provider);
+                annotationTypeToProvider.computeIfAbsent(annotation.annotationType(), a -> new HashSet<>(8)).add(provider);
             }
             size++;
         } finally {

@@ -205,7 +205,7 @@ public class Builder {
     /**
      * Finish building the ConfigurationFacade and return it.
      *
-     * @return the ConfigurationFacde
+     * @return the ConfigurationFacade
      */
     public ConfigurationFacade finish() {
         ConfigurationFacade facade = new DefaultConfigurationFacade(sources);
