@@ -17,8 +17,8 @@ import java.lang.annotation.Target;
 public @interface Aspects {
 
     /**
-     * The aspects to weave into the object instance. In cases where multiple aspects are used, all of them will have
-     * their pre and post methods executed, but only the exec method of the last aspect listed will be used.
+     * The aspects to weave into the object instance. Only one {@link vest.assist.aop.InvokeMethod} aspect may be
+     * declared; if multiple are listed an {@link IllegalArgumentException} will be thrown during processing.
      */
     Class<? extends Aspect>[] value();
 }

@@ -1,4 +1,8 @@
-package vest.assist;
+package vest.assist.provider;
+
+import vest.assist.Assist;
+import vest.assist.Reflector;
+import vest.assist.ValueLookup;
 
 import javax.inject.Provider;
 import java.lang.annotation.Annotation;
