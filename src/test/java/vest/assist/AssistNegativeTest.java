@@ -10,6 +10,7 @@ import vest.assist.annotations.Scheduled;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.LoggingAspect;
 import vest.assist.app.Teapot;
+import vest.assist.app.TimingAspect;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -159,5 +160,40 @@ public class AssistNegativeTest extends Assert {
                     @Lazy
                     private CoffeeMaker coffeeMaker;
                 }));
+    }
+
+    @Test
+    public void aspectErrors() {
+        Assist a = new Assist();
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            a.addConfig(new Object() {
+                @Factory
+                @Aspects({LoggingAspect.class})
+                public String str() {
+                    return "";
+                }
+            });
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            a.addConfig(new Object() {
+                @Factory
+                @Aspects({})
+                public String str() {
+                    return "";
+                }
+            });
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            a.addConfig(new Object() {
+                @Factory(eager = true)
+                @Aspects({TimingAspect.class, TimingAspect.class})
+                public CharSequence cs() {
+                    return "";
+                }
+            });
+        });
     }
 }

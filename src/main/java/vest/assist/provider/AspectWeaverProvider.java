@@ -3,7 +3,8 @@ package vest.assist.provider;
 import vest.assist.Assist;
 import vest.assist.AssistProvider;
 import vest.assist.aop.Aspect;
-import vest.assist.aop.AspectList;
+import vest.assist.aop.AspectInvocationHandler;
+import vest.assist.aop.InvokeMethod;
 
 import java.lang.reflect.Proxy;
 import java.util.Objects;
@@ -26,6 +27,9 @@ public class AspectWeaverProvider<T> extends AssistProviderWrapper<T> {
         if (aspects == null || aspects.length == 0) {
             throw new IllegalArgumentException("aspect weaver must be provided at least on aspect type");
         }
+        if (Stream.of(aspects).filter(InvokeMethod.class::isAssignableFrom).count() > 1) {
+            throw new IllegalArgumentException("only one InvokeMethod aspect may be assigned: " + delegate);
+        }
         this.assist = Objects.requireNonNull(assist);
         this.aspects = aspects;
     }
@@ -41,20 +45,13 @@ public class AspectWeaverProvider<T> extends AssistProviderWrapper<T> {
     }
 
     private T weaveAspects(T instance) {
-        Aspect aspect;
-        if (aspects.length == 1) {
-            aspect = assist.instance(aspects[0]);
-        } else {
-            Aspect[] aspectsArray = new Aspect[aspects.length];
-            for (int i = 0; i < aspectsArray.length; i++) {
-                aspectsArray[i] = assist.instance(aspects[i]);
-            }
-            aspect = new AspectList(aspectsArray);
+        Aspect[] aspectsArray = new Aspect[aspects.length];
+        for (int i = 0; i < aspectsArray.length; i++) {
+            aspectsArray[i] = assist.instance(aspects[i]);
         }
-        aspect.init(instance);
-
+        AspectInvocationHandler aih = new AspectInvocationHandler(instance, aspectsArray);
         @SuppressWarnings("unchecked")
-        T t = (T) Proxy.newProxyInstance(type().getClassLoader(), instance.getClass().getInterfaces(), aspect);
+        T t = (T) Proxy.newProxyInstance(type().getClassLoader(), instance.getClass().getInterfaces(), aih);
         return t;
     }
 }

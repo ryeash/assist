@@ -23,7 +23,6 @@ import java.util.List;
 public class ConstructorProvider<T> implements AssistProvider<T> {
 
     private final Class<T> advertisedType;
-    private final Class<? extends T> realType;
     private final Assist assist;
     private final Constructor<T> constructor;
     private final Parameter[] constructorParameters;
@@ -37,7 +36,6 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
 
     public ConstructorProvider(Class<T> advertisedType, Class<? extends T> realType, Assist assist) {
         this.advertisedType = advertisedType;
-        this.realType = realType;
         this.assist = assist;
         this.constructor = injectableConstructor(realType);
         this.constructorParameters = this.constructor.getParameters();

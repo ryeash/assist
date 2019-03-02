@@ -76,8 +76,8 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         private final Parameter[] parameters;
         private final Assist assist;
         private final Scheduled scheduled;
+        private final AtomicInteger executionCount;
         private ScheduledFuture<?> futureHandle;
-        private AtomicInteger executionCount;
 
         ScheduledRunnable(Object instance, Method method, Assist assist, Scheduled scheduled) {
             this.instanceRef = new WeakReference<>(instance);

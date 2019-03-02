@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  */
 public class Reflector {
 
-    private static final Map<ClassQualifier, Reflector> CACHE = new ConcurrentHashMap<>(64, .9F, 4);
+    private static final Map<ClassKey, Reflector> CACHE = new ConcurrentHashMap<>(64, .9F, 4);
     private static final Map<AnnotatedElement, Annotation> QUALIFIER_CACHE = new ConcurrentHashMap<>(64, .9F, 4);
 
     /**
@@ -51,7 +51,7 @@ public class Reflector {
      * @return The Reflector for the type, if the Reflector has already been create once, a cached Reflector will be returned
      */
     public static Reflector of(Class type) {
-        return CACHE.computeIfAbsent(new ClassQualifier(type, null), Reflector::new);
+        return CACHE.computeIfAbsent(new ClassKey(type), Reflector::new);
     }
 
     /**
@@ -69,7 +69,7 @@ public class Reflector {
     private final Collection<Field> fields;
     private final Collection<Method> methods;
 
-    private Reflector(ClassQualifier key) {
+    private Reflector(ClassKey key) {
         this.type = Objects.requireNonNull(key.type());
         this.scope = getScope(type);
         this.qualifier = getQualifier(type);
@@ -332,6 +332,32 @@ public class Reflector {
             return Objects.equals(method.getName(), other.getName())
                     && Objects.equals(method.getReturnType(), other.getReturnType())
                     && Arrays.equals(parameterTypes, um.parameterTypes);
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+    }
+
+    private static final class ClassKey {
+        private final Class type;
+        private final int hash;
+
+        public ClassKey(Class type) {
+            this.type = type;
+            this.hash = type.toString().hashCode();
+        }
+
+        public Class type() {
+            return type;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o != null
+                    && o.getClass() == getClass()
+                    && type.equals(((ClassKey) o).type);
         }
 
         @Override

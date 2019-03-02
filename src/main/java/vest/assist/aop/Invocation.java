@@ -13,7 +13,6 @@ public class Invocation {
     private Object instance;
     private Method method;
     private Object[] args;
-    private Object result = null;
 
     protected Invocation(Object instance, Method method, Object[] args) {
         this.instance = instance;
@@ -50,21 +49,11 @@ public class Invocation {
     }
 
     /**
-     * Get the arguments that the underlying method was called with. The return array is not a copy, altering the
+     * Get the arguments that the underlying method was called with. The returned array is not a copy, altering the
      * array will alter the eventual invocation of the underlying method.
      */
     public Object[] getArgs() {
         return args;
-    }
-
-    /**
-     * Get the ith argument passed to the method invocation
-     *
-     * @param i The index of the argument to get
-     * @return The argument
-     */
-    public Object getArg(int i) {
-        return args[i];
     }
 
     /**
@@ -86,36 +75,13 @@ public class Invocation {
     }
 
     /**
-     * Get the result of the method invocation
-     */
-    public Object getResult() {
-        return result;
-    }
-
-    /**
-     * Set the result of the method invocation
-     */
-    public void setResult(Object result) {
-        this.result = result;
-    }
-
-    /**
-     * Invoke the underlying method using the instance and arguments that are currently set on this Invocation. Sets
-     * the internal result to the result of the method invocation.
+     * Invoke the underlying method using the instance and arguments that are currently set on this Invocation.
      *
      * @return The result of invoking the method
      * @throws Throwable for any error caused by invoking the method
      */
     public Object invoke() throws Throwable {
-        result = method.invoke(instance, args);
-        return result;
-    }
-
-    /**
-     * Determine if the result of this method invocation is currently an error
-     */
-    public boolean isError() {
-        return result instanceof Throwable;
+        return method.invoke(instance, args);
     }
 
     @Override

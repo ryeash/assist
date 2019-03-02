@@ -14,6 +14,7 @@ import vest.assist.provider.InjectionProvider;
 import vest.assist.provider.LazyProvider;
 import vest.assist.provider.PrimaryProvider;
 import vest.assist.provider.PropertyInjector;
+import vest.assist.provider.ProviderTypeValueLookup;
 import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeFactory;
@@ -85,8 +86,6 @@ public class Assist implements Closeable {
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
-
-    private final ThreadLocal<Map<ClassQualifier, Provider>> threadLocalOverrides = new ThreadLocal<>();
 
     /**
      * Create a new Assist instance.
@@ -211,13 +210,6 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public <T> Provider<T> providerFor(Class<T> type, Annotation qualifier) {
         Objects.requireNonNull(type);
-        ClassQualifier classQualifier = new ClassQualifier(type, qualifier);
-        if (threadLocalOverrides.get() != null) {
-            Provider provider = threadLocalOverrides.get().get(classQualifier);
-            if (provider != null) {
-                return provider;
-            }
-        }
         return index.getOrCreate(type, qualifier, (t, q) -> {
             if (t.isInterface() || Modifier.isAbstract(t.getModifiers())) {
                 throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create interfaces/abstract classes");
@@ -329,7 +321,7 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public void addConfig(Object config) {
         Objects.requireNonNull(config, "can not process null configuration class");
-        log.info("processing configuration class: {}", config.getClass().getCanonicalName());
+        log.info("processing configuration class: {}", Reflector.debugName(config.getClass()));
         // create providers from the @Factory methods
         Reflector reflector = Reflector.of(config);
 
@@ -375,7 +367,7 @@ public class Assist implements Closeable {
         // allows e.g. @Inject methods to be called that include any final initialization to happen
         inject(config);
 
-        log.info("Finished processing configuration class {}", config.getClass().getCanonicalName());
+        log.info("Finished processing configuration class {}", Reflector.debugName(config.getClass()));
     }
 
     /**
@@ -628,72 +620,6 @@ public class Assist implements Closeable {
             throw new RuntimeException("error finding injectable value for: " + annotatedElement, e);
         }
         throw new RuntimeException("internal error: no value lookup is configured");
-    }
-
-    /**
-     * Override the provided instance for a provider using the given instance. Overrides
-     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
-     *
-     * @param instance The instance to use as the overridden provider type
-     * @return The provider created for the overridden value
-     * @see #override(Class, Annotation, Object)
-     */
-    @SuppressWarnings("unchecked")
-    public <T> Provider<T> override(T instance) {
-        return override((Class<T>) instance.getClass(), (Annotation) null, instance);
-    }
-
-
-    /**
-     * Override the provided instance for the given type with the given instance. Overrides
-     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
-     *
-     * @param type     The type to override the value for
-     * @param instance The instance to use as the overridden provider type
-     * @return The provider created for the overridden value
-     * @see #override(Class, Annotation, Object)
-     */
-    public <T> Provider<T> override(Class<T> type, T instance) {
-        return override(type, (Annotation) null, instance);
-    }
-
-    /**
-     * Override the provided instance for the given type and name combination with the given instance. Overrides
-     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
-     *
-     * @param type     The type to override the value for
-     * @param name     The name qualifier to use for the type
-     * @param instance The instance to use as the overridden provider type
-     * @return The provider created for the overridden value
-     * @see #override(Class, Annotation, Object)
-     */
-    public <T> Provider<T> override(Class<T> type, String name, T instance) {
-        return override(type, new NamedImpl(name), instance);
-    }
-
-    /**
-     * Override the provided instance for the given type and qualifier combination with the given instance. Overrides
-     * only apply to the current thread. Internally uses a ThreadLocal to track the overridden values.
-     *
-     * @param type      The type to override the value for
-     * @param qualifier The qualifier to use for the type
-     * @param instance  The instance to use as the overridden provider type
-     * @return The provider created for the overridden value
-     */
-    public <T> Provider<T> override(Class<T> type, Annotation qualifier, T instance) {
-        if (threadLocalOverrides.get() == null) {
-            threadLocalOverrides.set(new HashMap<>(4));
-        }
-        Provider<T> provider = new AdHocProvider<>(instance);
-        threadLocalOverrides.get().put(new ClassQualifier(type, qualifier), provider);
-        return provider;
-    }
-
-    /**
-     * Clear all overridden providers.
-     */
-    public void clearOverrides() {
-        threadLocalOverrides.remove();
     }
 
     @Override
