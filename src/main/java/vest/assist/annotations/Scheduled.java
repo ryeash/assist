@@ -23,8 +23,10 @@ public @interface Scheduled {
     /**
      * Assigns a name to the scheduled task. The name will be used for any internal logging (e.g. uncaught exceptions)
      * related to the scheduled method.
+     *
+     * @default empty (uses original thread name)
      */
-    String name() default "scheduled-task";
+    String name() default "";
 
     /**
      * The delay before first execution. A negative value indicates no delay.

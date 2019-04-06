@@ -2,7 +2,8 @@ package vest.assist.event;
 
 import vest.assist.Reflector;
 
-import java.lang.ref.SoftReference;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -12,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 /**
  * A simple event bus, listeners are registered and receive compatible messages published to the bus.
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  */
 public class EventBus {
     private final ExecutorService executorService;
-    private final Collection<SoftReference<? extends EListener>> registeredListeners = new ConcurrentLinkedQueue<>();
+    private final Collection<Reference<Listener>> registeredListeners = new ConcurrentLinkedQueue<>();
 
     /**
      * Create a new EventBus. A new single threaded {@link ExecutorService} will be created to service the published events.
@@ -58,33 +58,22 @@ public class EventBus {
                         throw new IllegalArgumentException("@EventListener methods must have 1 and only 1 parameter: " + Reflector.detailString(method));
                     }
                 })
-                .map(method -> new MethodListener(listener, method, method.getParameterTypes()[0]))
-                .map(SoftReference::new)
+                .map(method -> new Listener(listener, method, method.getParameterTypes()[0]))
+                .map(WeakReference::new)
                 .forEach(registeredListeners::add);
     }
 
     /**
-     * Register an event consumer with this event bus.
-     *
-     * @param type     The type of events to consumer
-     * @param consumer The consumer of the events
-     */
-    @SuppressWarnings("unchecked")
-    public <T> void register(Class<T> type, Consumer<T> consumer) {
-        registeredListeners.add(new SoftReference<>(new ConsumerListener(type, (Consumer<Object>) consumer)));
-    }
-
-    /**
-     * Unregister a previously registered listener object or {@link Consumer} instance. Messages will no longer be
+     * Unregister a previously registered listener object. Messages will no longer be
      * sent to the unregistered listener.
      *
      * @param listener The listener to unregister
      */
     public void unregister(Object listener) {
         Objects.requireNonNull(listener, "can not unregister null listener");
-        Iterator<SoftReference<? extends EListener>> iterator = registeredListeners.iterator();
+        Iterator<Reference<Listener>> iterator = registeredListeners.iterator();
         while (iterator.hasNext()) {
-            EListener l = Optional.ofNullable(iterator.next()).map(SoftReference::get).orElse(null);
+            Listener l = Optional.ofNullable(iterator.next()).map(Reference::get).orElse(null);
             if (l == null || l.isFrom(listener)) {
                 iterator.remove();
             }
@@ -99,74 +88,50 @@ public class EventBus {
      */
     public void publish(Object event) {
         Objects.requireNonNull(event, "can not publish null message");
-        Iterator<SoftReference<? extends EListener>> iterator = registeredListeners.iterator();
+        Iterator<Reference<Listener>> iterator = registeredListeners.iterator();
         while (iterator.hasNext()) {
-            EListener listener = Optional.ofNullable(iterator.next()).map(SoftReference::get).orElse(null);
+            Reference<Listener> next = iterator.next();
+            if (next == null) {
+                iterator.remove();
+                continue;
+            }
+            Listener listener = next.get();
             if (listener == null) {
                 iterator.remove();
-            } else if (listener.canAccept(event)) {
+                continue;
+            }
+            if (listener.canAccept(event)) {
                 executorService.submit(() -> listener.accept(event));
             }
         }
     }
 
-    private static abstract class EListener implements Consumer<Object> {
-        protected final Class type;
+    private static final class Listener {
 
-        protected EListener(Class type) {
+        private final Class type;
+        private final Object instance;
+        private final Method method;
+
+        protected Listener(Object instance, Method method, Class type) {
             this.type = type;
+            this.instance = instance;
+            this.method = method;
+        }
+
+        public boolean isFrom(Object o) {
+            return o == instance;
         }
 
         public boolean canAccept(Object o) {
             return type.isInstance(o);
         }
 
-        public abstract boolean isFrom(Object o);
-    }
-
-    private static final class MethodListener extends EListener {
-
-        private final Object instance;
-        private final Method method;
-
-        protected MethodListener(Object instance, Method method, Class type) {
-            super(type);
-            this.instance = instance;
-            this.method = method;
-        }
-
-        @Override
-        public boolean isFrom(Object o) {
-            return Objects.equals(instance, o);
-        }
-
-        @Override
         public void accept(Object o) {
             try {
                 method.invoke(instance, o);
             } catch (Exception e) {
                 throw new RuntimeException("error calling message listener: " + Reflector.detailString(method), e);
             }
-        }
-    }
-
-    private static final class ConsumerListener extends EListener {
-
-        private final Consumer<Object> consumer;
-
-        protected ConsumerListener(Class type, Consumer<Object> consumer) {
-            super(type);
-            this.consumer = consumer;
-        }
-
-        @Override
-        public boolean isFrom(Object o) {
-            return Objects.equals(consumer, o);
-        }
-
-        @Override
-        public void accept(Object o) {
-            consumer.accept(o);
         }
     }
 }

@@ -93,20 +93,37 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
             this.futureHandle = futureHandle;
         }
 
+        private String taskName() {
+            return scheduled.name().isEmpty() ? "<unknown>" : scheduled.name();
+        }
+
+        private String threadName() {
+            if (scheduled.name().isEmpty()) {
+                return Thread.currentThread().getName();
+            } else {
+                return scheduled.name();
+            }
+        }
+
         @Override
         public void run() {
             try {
-                Thread.currentThread().setName(scheduled.name());
                 Object instance = instanceRef.get();
                 if (instance != null) {
                     executionCount.incrementAndGet();
-                    method.invoke(instance, assist.getParameterValues(parameters));
+                    String originalThreadName = Thread.currentThread().getName();
+                    try {
+                        Thread.currentThread().setName(threadName());
+                        method.invoke(instance, assist.getParameterValues(parameters));
+                    } finally {
+                        Thread.currentThread().setName(originalThreadName);
+                    }
                 } else if (futureHandle != null) {
-                    log.info("object instance for scheduled task [{}] has been garbage collected, canceling task", scheduled.name());
+                    log.info("object instance for scheduled task [{}] [{}] has been garbage collected, canceling task", taskName(), Reflector.detailString(method));
                     futureHandle.cancel(false);
                 }
             } catch (Throwable e) {
-                log.error("error running scheduled task [{}] [{}]", scheduled.name(), Reflector.detailString(method), e);
+                log.error("error running scheduled task [{}] [{}]", taskName(), Reflector.detailString(method), e);
             } finally {
                 cancelIfExecutionLimitReached();
             }
@@ -121,7 +138,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                     futureHandle.cancel(false);
                 } else {
                     log.warn("scheduled task {} has hit its execution limit of {}, " +
-                            "but the future handle has not been set so it can't be canceled", scheduled.name(), executionCount);
+                            "but the future handle has not been set so it can't be canceled", taskName(), executionCount);
                 }
             }
         }

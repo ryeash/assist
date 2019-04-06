@@ -11,7 +11,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -50,7 +51,7 @@ public class EventBusTest extends Assert {
 
     public static class TestCase2 {
 
-        CountDownLatch cd = new CountDownLatch(4);
+        CountDownLatch cd = new CountDownLatch(2);
 
         @EventListener
         public void handleInteger(Integer i) {
@@ -66,11 +67,6 @@ public class EventBusTest extends Assert {
             assertEquals(l.longValue(), 1234L);
         }
 
-        @EventListener
-        public void handleNumber(Number n) {
-            System.out.println("number: " + n);
-            cd.countDown();
-        }
     }
 
     @Test
@@ -82,67 +78,69 @@ public class EventBusTest extends Assert {
         assertTrue(tc2.cd.await(1, TimeUnit.SECONDS));
     }
 
-    @Test
-    public void consumer() throws InterruptedException {
-        CountDownLatch cd = new CountDownLatch(1);
-        eventBus.register(String.class, str -> {
-            cd.countDown();
-            assertEquals(str, testStr);
-        });
-        eventBus.publish(testStr);
-        assertTrue(cd.await(1, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void unregisterConsumer() {
-        CountDownLatch cd = new CountDownLatch(1);
-        Consumer<String> consumer = str -> {
-            cd.countDown();
-            assertEquals(str, testStr);
-        };
-        eventBus.register(String.class, consumer);
-        eventBus.unregister(consumer);
-        eventBus.publish(testStr);
-        assertEquals(cd.getCount(), 1L);
-    }
-
     public static class TestCaseParallelism {
+
+        public static AtomicLong events = new AtomicLong();
+        public static Pattern pattern = Pattern.compile("\\s+");
 
         @EventListener
         public void event1(String message) {
-            String[] split = message.split("\\s+");
+            events.incrementAndGet();
+            String[] split = pattern.split(message);
             List<String> strings = Arrays.asList(split);
             assertTrue(strings.contains("this"));
         }
 
         @EventListener
         public void event2(String message) {
-            String[] split = message.split("\\s+");
+            events.incrementAndGet();
+            String[] split = pattern.split(message);
             List<String> strings = Arrays.asList(split);
             assertTrue(strings.contains("this"));
         }
 
         @EventListener
         public void event3(String message) {
-            String[] split = message.split("\\s+");
+            events.incrementAndGet();
+            String[] split = pattern.split(message);
             List<String> strings = Arrays.asList(split);
             assertTrue(strings.contains("this"));
         }
     }
 
     @Test
-    public void parallelism() {
+    public void parallelism() throws InterruptedException {
+        EventBus eb = new EventBus(Executors.newCachedThreadPool());
+
+        long start = System.nanoTime();
         ConcurrentLinkedDeque<TestCaseParallelism> collect = IntStream.range(0, 1500)
                 .mapToObj(i -> new TestCaseParallelism())
-                .peek(eventBus::register)
+                .peek(eb::register)
                 .collect(Collectors.toCollection(ConcurrentLinkedDeque::new));
+        System.out.println(TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS));
 
+        AtomicLong total = new AtomicLong(0);
+        AtomicLong unT = new AtomicLong(0);
+        start = System.nanoTime();
         IntStream.range(0, 1500)
                 .parallel()
                 .forEach(i -> {
                     TestCaseParallelism tc = collect.removeFirst();
-                    eventBus.unregister(tc);
-                    eventBus.publish("this is the string " + i);
+                    long u = System.nanoTime();
+                    eb.unregister(tc);
+                    unT.accumulateAndGet(System.nanoTime() - u, (a, b) -> a + b);
+
+                    long s = System.nanoTime();
+                    eb.publish("this is the string " + i);
+                    total.accumulateAndGet(System.nanoTime() - s, (a, b) -> a + b);
                 });
+        System.out.println("u: " + unT.get());
+        System.out.println("p: " + total.get());
+
+        System.out.println(TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS));
+        System.out.println("---");
+        Thread.sleep(1000);
+        System.out.println(TestCaseParallelism.events.get());
+        System.out.println("----------------------");
     }
 }

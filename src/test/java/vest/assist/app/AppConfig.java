@@ -7,6 +7,7 @@ import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
 import vest.assist.conf.ConfigurationFacade;
+import vest.assist.util.ExecutorBuilder;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -14,8 +15,8 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Scan("vest.assist.app")
 public class AppConfig extends BaseAppConfig {
@@ -81,7 +82,13 @@ public class AppConfig extends BaseAppConfig {
     @Factory
     @Singleton
     public ScheduledExecutorService scheduledExecutorServiceFactory() {
-        return Executors.newSingleThreadScheduledExecutor();
+        return ExecutorBuilder.newExecutor()
+                .setDaemonize(true)
+                .setThreadNamePrefix("scheduled-pool-")
+                .setContextClassLoader(ClassLoader.getSystemClassLoader())
+                .setUncaughtExceptionHandler((thread, error) -> error.printStackTrace())
+                .setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy())
+                .scheduledExecutor(1);
     }
 
     @Factory

@@ -1,5 +1,7 @@
 package vest.assist.app;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import vest.assist.annotations.Scheduled;
 
@@ -8,6 +10,8 @@ import static vest.assist.annotations.Scheduled.RunType.FIXED_RATE;
 
 public class TCScheduledMethods {
 
+    public static Logger log = LoggerFactory.getLogger(TCScheduledMethods.class);
+
     public int fixedDelayCount = 0;
     public int fixedRateCount = 0;
     public int limitedExecutions = 0;
@@ -15,11 +19,13 @@ public class TCScheduledMethods {
     @Scheduled(type = FIXED_RATE, period = 50)
     private void scheduledFixedRateMethod() {
         fixedRateCount++;
+        log.info("scheduledFixedRateMethod");
     }
 
     @Scheduled(type = FIXED_DELAY, period = 1)
     private void scheduledFixedDelayMethod() {
         fixedDelayCount++;
+        log.info("scheduledFixedDelayMethod");
         try {
             Thread.sleep(50);
         } catch (InterruptedException e) {
@@ -31,5 +37,7 @@ public class TCScheduledMethods {
     private void scheduledLimitedExecutions(CoffeeMaker cm) {
         Assert.assertNotNull(cm);
         limitedExecutions++;
+        log.info("scheduledLimitedExecutions");
+
     }
 }
