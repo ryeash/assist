@@ -15,11 +15,6 @@ public class AdHocProvider<T> implements AssistProvider<T> {
     private final T instance;
     private final Annotation qualifier;
 
-    @SuppressWarnings("unchecked")
-    public AdHocProvider(T instance) {
-        this((Class<T>) instance.getClass(), null, instance);
-    }
-
     public AdHocProvider(Class<T> advertisedType, Annotation qualifier, T instance) {
         this.advertisedType = advertisedType;
         this.instance = instance;

@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -95,7 +95,8 @@ public final class ExecutorBuilder {
     }
 
     /**
-     * Set the {@link RejectedExecutionHandler} for the executors created by this builder.
+     * Set the {@link RejectedExecutionHandler} for the executors created by this builder. Only applies when building
+     * a thread pool or scheduled thread pool executor. Does not apply to fork join pools.
      *
      * @param rejectedExecutionHandler the rejected execution handler
      * @return this builder
@@ -112,14 +113,11 @@ public final class ExecutorBuilder {
      * Create a new fixed size {@link ThreadPoolExecutor} using the current thread factory settings.
      *
      * @param nThreads the number of threads to use in the thread pool
-     * @return a new fixed size {@link ThreadPoolExecutor}
+     * @return a new fixed size {@link ExecutorService} backed by a {@link ThreadPoolExecutor}
+     * @see ExecutorBuilder#threadPoolExecutor(int, int, long, BlockingQueue)
      */
     public ExecutorService threadPoolExecutor(int nThreads) {
-        if (nThreads <= 0) {
-            throw new IllegalArgumentException("thread count must be greater than zero");
-        } else {
-            return threadPoolExecutor(nThreads, nThreads, 60, new LinkedBlockingDeque<>());
-        }
+        return threadPoolExecutor(nThreads, nThreads, 60, new LinkedBlockingQueue<>());
     }
 
     /**
@@ -127,7 +125,8 @@ public final class ExecutorBuilder {
      *
      * @param minThreads the minimum number of threads to maintain in the thread pool
      * @param maxThreads the maximum number of threads to allow in the thread pool
-     * @return a new variable size {@link ExecutorService}
+     * @return a new variable size {@link ExecutorService} backed by a {@link ThreadPoolExecutor}
+     * @see ExecutorBuilder#threadPoolExecutor(int, int, long, BlockingQueue)
      */
     public ExecutorService threadPoolExecutor(int minThreads, int maxThreads) {
         return threadPoolExecutor(minThreads, maxThreads, 60, new SynchronousQueue<>());
@@ -141,7 +140,7 @@ public final class ExecutorBuilder {
      * @param keepAliveSeconds the maximum seconds an idle thread will wait before terminating
      * @param workQueue        the queue to use for holding tasks before they are executed.  This queue will hold only
      *                         the {@code Runnable} tasks submitted by the {@code execute} method.
-     * @return a new {@link ThreadPoolExecutor}
+     * @return a new {@link ExecutorService} backed by a {@link ThreadPoolExecutor}
      */
     public ExecutorService threadPoolExecutor(int minThreads, int maxThreads, long keepAliveSeconds, BlockingQueue<Runnable> workQueue) {
         if (minThreads <= 0) {
@@ -164,12 +163,38 @@ public final class ExecutorBuilder {
     /**
      * Create a new {@link ScheduledExecutorService} using the current settings.
      *
-     * @param corePoolSize the number of threads to keep in the pool
-     * @return a new {@link ScheduledExecutorService}
-     * @see ScheduledThreadPoolExecutor#ScheduledThreadPoolExecutor(int, ThreadFactory, RejectedExecutionHandler)
+     * @param nThread the number of threads to use in the thread pool
+     * @return a new fixed size {@link ScheduledExecutorService} backed by a {@link ScheduledThreadPoolExecutor}
+     * @see ExecutorBuilder#scheduledExecutor(int, int, long)
      */
-    public ScheduledExecutorService scheduledExecutor(int corePoolSize) {
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize, tf(), rejectedExecutionHandler);
+    public ScheduledExecutorService scheduledExecutor(int nThread) {
+        return scheduledExecutor(nThread, nThread, 0);
+    }
+
+    /**
+     * Create a new {@link ScheduledExecutorService} using the current settings.
+     *
+     * @param minThreads the minimum number of threads to maintain in the thread pool
+     * @param maxThreads the maximum number of threads to allow in the thread pool
+     * @return a new variable size {@link ScheduledExecutorService} backed by a {@link ScheduledThreadPoolExecutor}
+     * @see ExecutorBuilder#scheduledExecutor(int, int, long)
+     */
+    public ScheduledExecutorService scheduledExecutor(int minThreads, int maxThreads) {
+        return scheduledExecutor(minThreads, maxThreads, 0);
+    }
+
+    /**
+     * Create a new {@link ScheduledExecutorService} using the current settings.
+     *
+     * @param minThreads       the minimum number of threads to maintain in the thread pool
+     * @param maxThreads       the maximum number of threads to allow in the thread pool
+     * @param keepAliveSeconds the maximum seconds an idle thread will wait before terminating
+     * @return a new {@link ScheduledExecutorService} backed by a {@link ScheduledThreadPoolExecutor}
+     */
+    public ScheduledExecutorService scheduledExecutor(int minThreads, int maxThreads, long keepAliveSeconds) {
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(minThreads, tf(), rejectedExecutionHandler);
+        scheduledThreadPoolExecutor.setMaximumPoolSize(maxThreads);
+        scheduledThreadPoolExecutor.setKeepAliveTime(keepAliveSeconds, TimeUnit.SECONDS);
         scheduledThreadPoolExecutor.allowCoreThreadTimeOut(false);
         scheduledThreadPoolExecutor.prestartAllCoreThreads();
         scheduledThreadPoolExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);

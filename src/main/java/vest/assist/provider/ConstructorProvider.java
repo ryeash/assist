@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -92,7 +93,7 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
 
         // find the injectable constructors (no-arg or marked with @Inject)
         int injectAnnotatedConstructors = 0;
-        LinkedList<Constructor<T>> list = new LinkedList<>();
+        Deque<Constructor<T>> list = new LinkedList<>();
         for (Constructor<T> c : type.getDeclaredConstructors()) {
             if (c.isAnnotationPresent(Inject.class)) {
                 injectAnnotatedConstructors++;
@@ -104,7 +105,7 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
 
         // error out if no constructors can be injected
         if (list.isEmpty()) {
-            throw new RuntimeException("no injectable constructors found for " + type);
+            throw new RuntimeException("no injectable constructor found for " + type);
         }
 
         // validate that there is at most ONE @Inject constructor
@@ -112,7 +113,7 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
             throw new RuntimeException("not eligible for injection: '" + type.getCanonicalName() + "' - only one constructor may be marked with @Inject");
         }
 
-        Constructor<T> constructor = list.get(0);
+        Constructor<T> constructor = list.getFirst();
 
         Reflector.makeAccessible(constructor);
         return constructor;

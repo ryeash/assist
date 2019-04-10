@@ -9,6 +9,8 @@ import vest.assist.annotations.Lazy;
 import vest.assist.annotations.Scheduled;
 import vest.assist.app.CoffeeMaker;
 import vest.assist.app.LoggingAspect;
+import vest.assist.app.TCInvalidClass1;
+import vest.assist.app.TCInvalidClass2;
 import vest.assist.app.Teapot;
 import vest.assist.app.TimingAspect;
 
@@ -195,5 +197,13 @@ public class AssistNegativeTest extends Assert {
                 }
             });
         });
+    }
+
+    @Test
+    public void invalidConstructors() {
+        Assist assist = new Assist();
+//        assist.instance(TCInvalidClass1.class);
+        assertThrows(() -> assist.instance(TCInvalidClass1.class));
+        assertThrows(() -> assist.instance(TCInvalidClass2.class));
     }
 }

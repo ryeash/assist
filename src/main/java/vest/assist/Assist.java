@@ -210,15 +210,7 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public <T> Provider<T> providerFor(Class<T> type, Annotation qualifier) {
         Objects.requireNonNull(type);
-        return index.getOrCreate(type, qualifier, (t, q) -> {
-            if (t.isInterface() || Modifier.isAbstract(t.getModifiers())) {
-                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create interfaces/abstract classes");
-            }
-            if (q != null) {
-                throw new RuntimeException("no provider for " + t + "/" + q + " found, and can not auto-create qualified provider");
-            }
-            return buildProvider(t);
-        });
+        return index.getOrCreate(type, qualifier, this::buildConstructorProvider);
     }
 
     /**
@@ -309,7 +301,7 @@ public class Assist implements Closeable {
      */
     public void addConfig(Class<?> configClass) {
         // don't just use the instance(...) method because we don't want the config object available through a Provider
-        addConfig(buildProvider(configClass).get());
+        addConfig(buildConstructorProvider(configClass).get());
     }
 
     /**
@@ -413,7 +405,17 @@ public class Assist implements Closeable {
         }
     }
 
-    private <T> AssistProvider<T> buildProvider(Class<T> type) {
+    private <T> AssistProvider<T> buildConstructorProvider(Class<T> type) {
+        return buildConstructorProvider(type, null);
+    }
+
+    private <T> AssistProvider<T> buildConstructorProvider(Class<T> type, Annotation qualifier) {
+        if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+            throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create interfaces/abstract classes");
+        }
+        if (qualifier != null) {
+            throw new RuntimeException("no provider for " + type + "/" + qualifier + " found, and can not auto-create qualified provider");
+        }
         return buildProvider(new ConstructorProvider<>(type, this), false);
     }
 
@@ -537,7 +539,7 @@ public class Assist implements Closeable {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);
             Annotation qualifier = Reflector.of(type).qualifier();
-            Provider<?> provider = index.getOrCreate(type, qualifier, (t, q) -> buildProvider(t));
+            Provider<?> provider = index.getOrCreate(type, qualifier, (t, q) -> buildConstructorProvider(t));
             if (provider != null) {
                 provider.get();
             }

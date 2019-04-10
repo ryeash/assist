@@ -19,13 +19,11 @@ public class TCScheduledMethods {
     @Scheduled(type = FIXED_RATE, period = 50)
     private void scheduledFixedRateMethod() {
         fixedRateCount++;
-        log.info("scheduledFixedRateMethod");
     }
 
     @Scheduled(type = FIXED_DELAY, period = 1)
     private void scheduledFixedDelayMethod() {
         fixedDelayCount++;
-        log.info("scheduledFixedDelayMethod");
         try {
             Thread.sleep(50);
         } catch (InterruptedException e) {
@@ -37,7 +35,6 @@ public class TCScheduledMethods {
     private void scheduledLimitedExecutions(CoffeeMaker cm) {
         Assert.assertNotNull(cm);
         limitedExecutions++;
-        log.info("scheduledLimitedExecutions");
 
     }
 }
