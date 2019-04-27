@@ -38,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -414,5 +415,28 @@ public class AssistTest extends Assert {
         }
         assertTrue(collect.contains(assist.providerFor(InputStream.class, "bais")));
         assertTrue(collect.contains(assist.providerFor(CoffeeMaker.class, "keurig")));
+    }
+
+    @Test
+    public void lotsOfCloseables() {
+        Assist assist = new Assist();
+        assist.addConfig(new Object() {
+            @Factory
+            public InputStream is() {
+                return new ByteArrayInputStream(new byte[0]);
+            }
+        });
+
+        IntStream.range(0, 10000)
+                .parallel()
+                .mapToObj(i -> assist.instance(InputStream.class))
+                .forEach(i -> {
+                    try {
+                        i.read();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+        assist.close();
     }
 }

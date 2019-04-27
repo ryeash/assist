@@ -20,7 +20,7 @@ public class ShutdownContainer implements InstanceInterceptor, AutoCloseable {
     @Override
     public void intercept(Object instance) {
         if (instance instanceof AutoCloseable) {
-            synchronized (this) {
+            synchronized (cleanupObjects) {
                 cleanupObjects.add((AutoCloseable) instance);
             }
         }

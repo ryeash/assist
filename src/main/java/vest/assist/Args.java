@@ -1,5 +1,7 @@
 package vest.assist;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -17,7 +19,8 @@ public class Args implements Iterable<String> {
     private final List<String> args;
 
     public Args(String[] args) {
-        this.args = Stream.of(args).map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+        List<String> temp = Stream.of(args).map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toCollection(ArrayList::new));
+        this.args = Collections.unmodifiableList(temp);
     }
 
     /**

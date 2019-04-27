@@ -230,6 +230,7 @@ instantiation. If you need to search for some other annotation type, set the tar
 Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the 
 [@Aspects](src/main/java/vest/assist/annotations/Aspects.java) annotation.
 You can, for example, add a Logging aspect to a provided instance:
+
 First define your aspect:
 ```java
 public class LoggingAspect implements BeforeMethod, AfterMethod {
@@ -429,13 +430,11 @@ public class LogInjector implements InstanceInterceptor {
 
     @Override
     public void intercept(Object instance) {
-        Reflector.of(instance).forAnnotatedFields(Log.class, (logAnnotation, field) -> {
-            try {
+        for (Field field : Reflector.of(annotatedElement).fields()) {
+            if(field.isAnnotationPresent(Log.class)){
                 field.set(instance, LoggerFactory.getLogger(instance.getClass()));
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("error setting log: " + field, e);
             }
-        });
+        }
     }
 }
 ```

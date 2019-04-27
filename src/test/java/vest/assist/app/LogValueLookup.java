@@ -11,6 +11,10 @@ import java.lang.reflect.Type;
 public class LogValueLookup implements ValueLookup {
     @Override
     public Object lookup(Class<?> rawType, Type genericType, AnnotatedElement annotatedElement) {
-        return (rawType == Logger.class) ? LoggerFactory.getLogger(((Field) annotatedElement).getDeclaringClass()) : null;
+        if (annotatedElement instanceof Field) {
+            return (rawType == Logger.class) ? LoggerFactory.getLogger(((Field) annotatedElement).getDeclaringClass()) : null;
+        } else {
+            return null;
+        }
     }
 }

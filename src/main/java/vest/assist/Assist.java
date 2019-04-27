@@ -329,7 +329,7 @@ public class Assist implements Closeable {
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
                 AssistProvider p = buildProvider(factory, factoryAnnotation.skipInjection());
 
-                log.info("{}: adding provider {} {}", config.getClass().getSimpleName(), returnType.getSimpleName(), p);
+                log.info("{}: adding provider {} {}", Reflector.debugName(config.getClass()), returnType.getSimpleName(), p);
                 index.setProvider(p);
                 if (factory.qualifier() != null && factory.isPrimary()) {
                     log.info("\\- will be added as primary provider");
