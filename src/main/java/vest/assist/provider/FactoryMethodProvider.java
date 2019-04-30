@@ -96,5 +96,22 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
         sb.append(method).append("}:").append(hashCode());
         return sb.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AssistProvider)) {
+            return false;
+        }
+        AssistProvider<?> that = (AssistProvider<?>) o;
+        return Objects.equals(type(), that.type()) && Objects.equals(qualifier(), that.qualifier());
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode() * 31 + (qualifier != null ? qualifier.hashCode() : 0);
+    }
 }
 
