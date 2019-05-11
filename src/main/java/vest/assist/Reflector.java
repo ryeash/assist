@@ -15,13 +15,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 
 /**
@@ -63,6 +60,7 @@ public class Reflector {
     }
 
     private final Class type;
+    private final String simpleName;
     private final Annotation scope;
     private final Annotation qualifier;
     private final Collection<Class> hierarchy;
@@ -70,42 +68,31 @@ public class Reflector {
     private final Collection<Method> methods;
 
     private Reflector(ClassKey key) {
-        this.type = Objects.requireNonNull(key.type());
+        this.type = Objects.requireNonNull(key.type);
+        this.simpleName = this.type.getSimpleName();
         this.scope = getScope(type);
         this.qualifier = getQualifier(type);
 
-        List<Class> typeHierarchy = new LinkedList<>();
-        List<Field> typeFields = new LinkedList<>();
-        List<Method> typeMethods = new LinkedList<>();
-
+        LinkedList<Class> typeHierarchy = new LinkedList<>(Arrays.asList(type.getInterfaces()));
+        LinkedList<Method> typeMethods = new LinkedList<>();
         Set<UniqueMethod> methodTracker = new HashSet<>(32);
-        hierarchy(type).forEach(c -> {
-            typeHierarchy.add(0, c);
-            Collections.addAll(typeFields, c.getDeclaredFields());
-            for (Method method : c.getDeclaredMethods()) {
+        Set<Field> typeFields = new HashSet<>(16);
+
+        Class temp = type;
+        while (temp != null && temp != Object.class) {
+            typeHierarchy.addFirst(temp);
+            Collections.addAll(typeFields, temp.getDeclaredFields());
+            for (Method method : temp.getDeclaredMethods()) {
                 if (methodTracker.add(new UniqueMethod(method))) {
-                    typeMethods.add(0, method);
+                    typeMethods.addFirst(method);
                 }
             }
-        });
+            temp = temp.getSuperclass();
+        }
+
         this.hierarchy = Collections.unmodifiableCollection(typeHierarchy);
         this.methods = Collections.unmodifiableCollection(typeMethods);
-        this.fields = Collections.unmodifiableCollection(new HashSet<>(typeFields));
-    }
-
-    /**
-     * Return the hierarchy of the given class, including interfaces, up to, but excluding, {@link Object}.
-     *
-     * @param c the class to get the hierarchy of
-     * @return a stream of classes in the hierarchy of the given class (including the given class and all declared interfaces)
-     */
-    public static Stream<Class> hierarchy(Class c) {
-        if (c == null || c == Object.class) {
-            return Stream.empty();
-        }
-        return Stream.of(Stream.of(c), Arrays.stream(c.getInterfaces()), hierarchy(c.getSuperclass()))
-                .flatMap(Function.identity())
-                .distinct();
+        this.fields = Collections.unmodifiableCollection(typeFields);
     }
 
     /**
@@ -113,6 +100,13 @@ public class Reflector {
      */
     public Class type() {
         return type;
+    }
+
+    /**
+     * @return The simple class name of the reflected type
+     */
+    public String simpleName() {
+        return simpleName;
     }
 
     /**
@@ -289,34 +283,13 @@ public class Reflector {
         return Class.forName(canonicalClassName);
     }
 
-    public static int hash(Object... objects) {
-        int hash = 1;
-        if (objects == null || objects.length == 0) {
-            return hash;
-        }
-        for (Object object : objects) {
-            if (object != null) {
-                if (object instanceof Class) {
-                    hash += 31 * ((Class) object).getName().hashCode();
-                } else if (object.getClass().isArray()) {
-                    hash += 31 * hash((Object[]) object);
-                } else {
-                    hash += 31 * object.hashCode();
-                }
-            }
-        }
-        return hash;
-    }
-
     private static final class UniqueMethod {
         private final Method method;
         private final Class<?>[] parameterTypes;
-        private final int hash;
 
         UniqueMethod(Method method) {
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
-            this.hash = Reflector.hash(method.getName(), method.getReturnType(), parameterTypes);
         }
 
         @Override
@@ -336,7 +309,9 @@ public class Reflector {
 
         @Override
         public int hashCode() {
-            return hash;
+            return method.getName().hashCode()
+                    + 31 * method.getReturnType().toString().hashCode()
+                    + 31 * Arrays.hashCode(parameterTypes);
         }
     }
 
