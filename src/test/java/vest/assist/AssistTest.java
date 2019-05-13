@@ -30,6 +30,7 @@ import vest.assist.app.TCPropertyInjection;
 import vest.assist.app.TCScannedComponents;
 import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.TCSkipInjection;
+import vest.assist.app.TCStaticInject;
 import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
@@ -449,5 +450,14 @@ public class AssistTest extends Assert {
         assertTrue(assist.hasProvider(CoffeeMaker.class, "two"));
         assertTrue(assist.hasProvider(CoffeeMaker.class, "three"));
         assertTrue(assist.hasProvider(CoffeeMaker.class, "four"));
+    }
+
+    @Test
+    public void staticInjection() {
+        assertNull(TCStaticInject.globalCoffeeMaker);
+        assertFalse(TCStaticInject.methodInjected);
+        assist.instance(TCStaticInject.class);
+        assertNotNull(TCStaticInject.globalCoffeeMaker);
+        assertTrue(TCStaticInject.methodInjected);
     }
 }

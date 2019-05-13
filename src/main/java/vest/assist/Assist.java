@@ -543,6 +543,7 @@ public class Assist implements Closeable {
      *                    example: com.foo.service
      * @param target      The annotation that will be used to select which classes to create instances for;
      *                    example: Singleton.class
+     * @see #packageScan(String, Class, Consumer)
      */
     @SuppressWarnings("unchecked")
     public void packageScan(String basePackage, Class<? extends Annotation> target) {
@@ -556,6 +557,16 @@ public class Assist implements Closeable {
         });
     }
 
+    /**
+     * Scan the classpath (recursively) for classes with the given base package and target annotation and perform
+     * the given action on them.
+     *
+     * @param basePackage The base package to start the scan in, it must not end with a wild card;
+     *                    example: com.foo.server
+     * @param target      The annotation that will be used to select which classes that will be scanned
+     *                    example: Singleton.class
+     * @param action      The action to take for each class that is found
+     */
     public void packageScan(String basePackage, Class<? extends Annotation> target, Consumer<Class<?>> action) {
         if (basePackage.endsWith("*")) {
             throw new IllegalArgumentException("base package [" + basePackage + "] must not end with '*'");
@@ -563,7 +574,6 @@ public class Assist implements Closeable {
         log.info("scanning classpath under {} for @{} classes", basePackage, target.getSimpleName());
         PackageScanner.scan(basePackage)
                 .filter(c -> c.isAnnotationPresent(target))
-                .peek(c -> log.info("  scanned class: {}", c))
                 .forEach(action);
     }
 
