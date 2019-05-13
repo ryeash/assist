@@ -22,6 +22,7 @@ import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCCustomInjectAnnotation;
+import vest.assist.app.TCImport;
 import vest.assist.app.TCLazy;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCOptional;
@@ -438,5 +439,15 @@ public class AssistTest extends Assert {
                     }
                 });
         assist.close();
+    }
+
+    @Test
+    public void importTest() {
+        Assist assist = new Assist();
+        assist.addConfig(TCImport.TCImport1.class);
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "one"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "two"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "three"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "four"));
     }
 }

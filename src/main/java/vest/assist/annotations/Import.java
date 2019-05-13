@@ -15,5 +15,8 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Import {
 
+    /**
+     * The classes to import when processing the target configuration class.
+     */
     Class<?>[] value();
 }
