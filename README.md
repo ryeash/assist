@@ -359,7 +359,7 @@ public class SomeComponent {
     public List<Double> numbers; // List, Sets, SortedSets
 
     @Inject
-    private void setProps(@Property("enum")SomeEnum someEnum){
+    private void setProps(@Property("enum") SomeEnum someEnum){
         // ...
     }
     
@@ -393,7 +393,7 @@ public class AppConfig {
 Using the @Scheduled annotation, set a method to be scheduled by Assist.
 ```java
 public class ObjectWithATask {
-    @Scheduled(name = "pointless-task", type = FIXED_RATE, period = 3, executions = 4)
+    @Scheduled(name = "pointless-task", type = FIXED_RATE, period = 3, unit = TimeUnit.SECONDS, executions = 4)
     private void myScheduledTask(CoffeeMaker cm) {
         log.info("running task");
     }
@@ -462,7 +462,7 @@ public class LogInjector implements InstanceInterceptor {
 
     @Override
     public void intercept(Object instance) {
-        for (Field field : Reflector.of(annotatedElement).fields()) {
+        for (Field field : Reflector.of(instance).fields()) {
             if(field.isAnnotationPresent(Log.class)){
                 field.set(instance, LoggerFactory.getLogger(instance.getClass()));
             }
