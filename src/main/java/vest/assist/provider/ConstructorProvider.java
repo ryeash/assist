@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A provider instance that creates objects using a constructor. Per spec, only the zero-arg constructor or a
@@ -83,6 +84,23 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
         }
         sb.append(constructor).append("}:").append(hashCode());
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AssistProvider)) {
+            return false;
+        }
+        AssistProvider<?> that = (AssistProvider<?>) o;
+        return Objects.equals(type(), that.type()) && Objects.equals(qualifier(), that.qualifier());
+    }
+
+    @Override
+    public int hashCode() {
+        return advertisedType.hashCode() * 31 + (qualifier != null ? qualifier.hashCode() : 0);
     }
 
     @SuppressWarnings("unchecked")

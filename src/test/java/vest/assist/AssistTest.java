@@ -22,6 +22,7 @@ import vest.assist.app.PourOver;
 import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCCustomInjectAnnotation;
+import vest.assist.app.TCImport;
 import vest.assist.app.TCLazy;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCOptional;
@@ -29,6 +30,7 @@ import vest.assist.app.TCPropertyInjection;
 import vest.assist.app.TCScannedComponents;
 import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.TCSkipInjection;
+import vest.assist.app.TCStaticInject;
 import vest.assist.app.Teapot;
 
 import javax.inject.Inject;
@@ -438,5 +440,24 @@ public class AssistTest extends Assert {
                     }
                 });
         assist.close();
+    }
+
+    @Test
+    public void importTest() {
+        Assist assist = new Assist();
+        assist.addConfig(TCImport.TCImport1.class);
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "one"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "two"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "three"));
+        assertTrue(assist.hasProvider(CoffeeMaker.class, "four"));
+    }
+
+    @Test
+    public void staticInjection() {
+        assertNull(TCStaticInject.globalCoffeeMaker);
+        assertFalse(TCStaticInject.methodInjected);
+        assist.instance(TCStaticInject.class);
+        assertNotNull(TCStaticInject.globalCoffeeMaker);
+        assertTrue(TCStaticInject.methodInjected);
     }
 }

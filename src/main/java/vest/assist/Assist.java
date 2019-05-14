@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.Import;
 import vest.assist.annotations.Scan;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.AspectWeaverProvider;
@@ -313,7 +314,16 @@ public class Assist implements Closeable {
     @SuppressWarnings("unchecked")
     public void addConfig(Object config) {
         Objects.requireNonNull(config, "can not process null configuration class");
-        log.info("processing configuration class: {}", Reflector.debugName(config.getClass()));
+        Class<?> type = config.getClass();
+        log.info("processing configuration class: {}", Reflector.debugName(type));
+        // process @Import
+        Import imp = type.getAnnotation(Import.class);
+        if (imp != null) {
+            for (Class<?> importedConfiguration : imp.value()) {
+                addConfig(importedConfiguration);
+            }
+        }
+
         // create providers from the @Factory methods
         Reflector reflector = Reflector.of(config);
 
@@ -323,7 +333,7 @@ public class Assist implements Closeable {
                 Factory factoryAnnotation = method.getAnnotation(Factory.class);
                 Class<?> returnType = method.getReturnType();
                 if (returnType == Void.TYPE) {
-                    throw new IllegalArgumentException(config.getClass().getSimpleName() + ": factory methods may not return void: " + Reflector.detailString(method));
+                    throw new IllegalArgumentException(reflector.simpleName() + ": factory methods may not return void: " + Reflector.detailString(method));
                 }
 
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
@@ -351,7 +361,7 @@ public class Assist implements Closeable {
 
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
         for (FactoryMethodProvider eagerFactory : eagerFactories) {
-            log.info("{}: calling eager factory provider: {}", config.getClass().getSimpleName(), eagerFactory);
+            log.info("{}: calling eager factory provider: {}", reflector.simpleName(), eagerFactory);
             eagerFactory.get();
         }
 
@@ -533,6 +543,7 @@ public class Assist implements Closeable {
      *                    example: com.foo.service
      * @param target      The annotation that will be used to select which classes to create instances for;
      *                    example: Singleton.class
+     * @see #packageScan(String, Class, Consumer)
      */
     @SuppressWarnings("unchecked")
     public void packageScan(String basePackage, Class<? extends Annotation> target) {
@@ -546,6 +557,16 @@ public class Assist implements Closeable {
         });
     }
 
+    /**
+     * Scan the classpath (recursively) for classes with the given base package and target annotation and perform
+     * the given action on them.
+     *
+     * @param basePackage The base package to start the scan in, it must not end with a wild card;
+     *                    example: com.foo.server
+     * @param target      The annotation that will be used to select which classes that will be scanned
+     *                    example: Singleton.class
+     * @param action      The action to take for each class that is found
+     */
     public void packageScan(String basePackage, Class<? extends Annotation> target, Consumer<Class<?>> action) {
         if (basePackage.endsWith("*")) {
             throw new IllegalArgumentException("base package [" + basePackage + "] must not end with '*'");
@@ -553,7 +574,6 @@ public class Assist implements Closeable {
         log.info("scanning classpath under {} for @{} classes", basePackage, target.getSimpleName());
         PackageScanner.scan(basePackage)
                 .filter(c -> c.isAnnotationPresent(target))
-                .peek(c -> log.info("  scanned class: {}", c))
                 .forEach(action);
     }
 
