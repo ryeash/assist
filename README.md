@@ -177,14 +177,14 @@ be called once to force creation of the singleton.
 
 It is technically possible to mark any @Factory eager, but it really only makes sense for @Singleton scope.
 
-### Lazy
+### @Lazy
 In rare cases it may be necessary to inject a handle to an object before assist is ready to properly wire it; possibly
 to avoid dependency or inheritance issues. To solve this, Assist can inject lazy handles to objects:
 ```java
 public class LazilyInjected {
     @Inject // lazy fields still must be marked with @Inject in order to be injected
     @Lazy
-    private Provider<Dog> lazyDog;
+    private Provider<Dog> lazyDog; // lazy injection is only allowed for Provider types
     
     ...
     
@@ -225,6 +225,38 @@ instantiation. If you need to search for some other annotation type, set the tar
 ```java
 @Scan(value = "com.my.base.package", target = Endpoint.class)
 ```
+
+### @Import
+The [@Import](src/main/java/vest/assist/annotations/Import.java) annotation can be used on a configuration class 
+to automatically include other configuration classes during processing:
+
+First, define your persistence specific configuration class:
+```java
+public class PersistenceConfig {
+    @Factory
+    @Singleton
+    public EntityManager jdbc(){
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("persistence");
+        return entityManagerFactory.createEntityManager();
+    }
+}
+```
+
+Then, define your main application config class, including an @Import for ```PersistenceConfig```:
+```java
+@Import(PersistenceConfig.class)
+public class AppConfig {
+    ...
+}
+```
+
+On startup, register AppConfig and PersistenceConfig will be included during processing:
+```java
+assist.addConfig(AppConfig.class);  // your EntityManager will be available for injection
+```
+
+Note: Imported classes are processed _before_ the class being registered.
+
 
 ### @Aspects
 Aspect Oriented Programming (AOP) is supported on @Factory methods with the use of the 
