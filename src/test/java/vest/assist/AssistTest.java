@@ -32,6 +32,7 @@ import vest.assist.app.TCScheduledMethods;
 import vest.assist.app.TCSkipInjection;
 import vest.assist.app.TCStaticInject;
 import vest.assist.app.Teapot;
+import vest.assist.util.PackageScanner;
 
 import javax.inject.Inject;
 import javax.inject.Named;

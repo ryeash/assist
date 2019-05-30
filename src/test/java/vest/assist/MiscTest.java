@@ -9,6 +9,7 @@ import vest.assist.app.Keurig;
 import vest.assist.app.PourOver;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.Teapot;
+import vest.assist.util.PackageScanner;
 
 import javax.inject.Named;
 import javax.inject.Singleton;

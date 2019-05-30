@@ -20,6 +20,7 @@ import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeFactory;
 import vest.assist.provider.ThreadLocalScopeFactory;
+import vest.assist.util.PackageScanner;
 
 import javax.inject.Provider;
 import java.io.Closeable;

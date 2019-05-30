@@ -1,4 +1,4 @@
-package vest.assist;
+package vest.assist.util;
 
 import java.io.File;
 import java.io.IOException;
