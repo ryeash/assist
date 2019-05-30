@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Builder class for creating different types of {@link ExecutorService} services.
+ * Builder class for creating different types of {@link ExecutorService}.
  */
 public final class ExecutorBuilder {
 

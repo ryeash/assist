@@ -30,6 +30,8 @@ public @interface Scheduled {
 
     /**
      * The delay before first execution. A negative value indicates no delay.
+     *
+     * @default -1 (no delay)
      */
     long delay() default -1;
 
@@ -40,18 +42,35 @@ public @interface Scheduled {
 
     /**
      * The unit to use for the delay and period values.
+     *
+     * @default {@link TimeUnit#MILLISECONDS}
      */
     TimeUnit unit() default TimeUnit.MILLISECONDS;
 
     /**
      * The {@link RunType} to use for this scheduled method.
+     *
+     * @default {@link RunType#FIXED_RATE}
      */
     RunType type() default RunType.FIXED_RATE;
 
     /**
      * The number of times the scheduled method will be executed. Defaults to -1, which is interpreted as unlimited.
+     *
+     * @default -1 (unlimited)
      */
     int executions() default -1;
+
+    String UNSET = "\u0000";
+
+    /**
+     * The name qualifier to use when looking up the {@link java.util.concurrent.ScheduledExecutorService} that will
+     * be used to submit the scheduled task for execution.
+     *
+     * @default {@link Scheduled#UNSET} (will not use a name during lookup)
+     * @see javax.inject.Named
+     */
+    String scheduler() default UNSET;
 
     enum RunType {
         /**

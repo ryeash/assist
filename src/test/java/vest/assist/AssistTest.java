@@ -353,6 +353,7 @@ public class AssistTest extends Assert {
         assertEquals(sched.fixedDelayCount, 10);
         assertEquals(sched.fixedRateCount, 10);
         assertEquals(sched.limitedExecutions, 4);
+        assertEquals(sched.alternateRun, 1);
     }
 
     @Test

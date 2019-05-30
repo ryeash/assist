@@ -302,7 +302,7 @@ public class Assist implements Closeable {
      */
     public void addConfig(Class<?> configClass) {
         // don't just use the instance(...) method because we don't want the config object available through a Provider
-        addConfig(buildConstructorProvider(configClass).get());
+        addConfig(buildProvider(new ConstructorProvider<>(configClass, this), true).get());
     }
 
     /**

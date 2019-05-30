@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * or inheritance issues might cause problems. Lazy should be used carefully; over use of lazy injection may
  * be an indication of architectural problems.
  * <p>
- * The @Lazy annotation may only be used to inject Provider fields, e.g.:
+ * The @Lazy annotation may only be used to inject Provider types, e.g.:
  * <code>
  * &#64;Lazy
  * &#64;Inject

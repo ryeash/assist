@@ -48,7 +48,7 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         if (scheduled.period() <= 0) {
             throw new RuntimeException("invalid schedule period: must be greater than zero for run type " + scheduled.type() + " on " + Reflector.detailString(method));
         }
-        ScheduledExecutorService scheduledExecutorService = lazyExecutor.get();
+        ScheduledExecutorService scheduledExecutorService = getExecutor(scheduled);
         ScheduledRunnable runnable = new ScheduledRunnable(instance, method, assist, scheduled);
         long delay = Math.max(0, scheduled.delay());
         ScheduledFuture<?> future;
@@ -63,6 +63,14 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
                 throw new RuntimeException("unhandled run type: " + scheduled.type());
         }
         runnable.setFutureHandle(future);
+    }
+
+    private ScheduledExecutorService getExecutor(Scheduled scheduled) {
+        if (scheduled.scheduler().equals(Scheduled.UNSET)) {
+            return assist.instance(ScheduledExecutorService.class);
+        } else {
+            return assist.instance(ScheduledExecutorService.class, scheduled.scheduler());
+        }
     }
 
     @Override

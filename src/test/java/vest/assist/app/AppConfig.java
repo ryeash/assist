@@ -93,6 +93,19 @@ public class AppConfig extends BaseAppConfig {
 
     @Factory
     @Singleton
+    @Named("alternate")
+    public ScheduledExecutorService alternateScheduledExecutoreServiceFactory() {
+        return ExecutorBuilder.newExecutor()
+                .setDaemonize(true)
+                .setThreadNamePrefix("alt-scheduled-pool-")
+                .setContextClassLoader(ClassLoader.getSystemClassLoader())
+                .setUncaughtExceptionHandler((thread, error) -> error.printStackTrace())
+                .setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy())
+                .scheduledExecutor(1);
+    }
+
+    @Factory
+    @Singleton
     public TCMultipleDependenciesSatisfied multipleDeps() {
         return new TCMultipleDependenciesSatisfied();
     }

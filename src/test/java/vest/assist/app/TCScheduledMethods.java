@@ -15,6 +15,7 @@ public class TCScheduledMethods {
     public int fixedDelayCount = 0;
     public int fixedRateCount = 0;
     public int limitedExecutions = 0;
+    public int alternateRun;
 
     @Scheduled(type = FIXED_RATE, period = 50)
     private void scheduledFixedRateMethod() {
@@ -35,6 +36,10 @@ public class TCScheduledMethods {
     private void scheduledLimitedExecutions(CoffeeMaker cm) {
         Assert.assertNotNull(cm);
         limitedExecutions++;
+    }
 
+    @Scheduled(period = 3, scheduler = "alternate", executions = 1)
+    public void usingAQualifiedScheduler() {
+        alternateRun++;
     }
 }

@@ -1,7 +1,7 @@
 package vest.assist.aop;
 
 /**
- * Base Aspect class.
+ * Base Aspect interface.
  *
  * @see BeforeMethod
  * @see AfterMethod
