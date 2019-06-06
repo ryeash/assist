@@ -2,12 +2,11 @@ package vest.assist;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import vest.assist.annotations.Aspects;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Import;
 import vest.assist.annotations.Scan;
 import vest.assist.provider.AdHocProvider;
-import vest.assist.provider.AspectWeaverProvider;
+import vest.assist.provider.AspectWrapper;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
@@ -17,6 +16,7 @@ import vest.assist.provider.PrimaryProvider;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ProviderTypeValueLookup;
 import vest.assist.provider.ScheduledTaskInterceptor;
+import vest.assist.provider.ScopeWrapper;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.provider.SingletonScopeFactory;
 import vest.assist.provider.ThreadLocalScopeFactory;
@@ -34,11 +34,9 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -84,17 +82,21 @@ public class Assist implements Closeable {
     }
 
     private final ProviderIndex index = new ProviderIndex();
-    private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
+    private final ScopeWrapper scopeWrapper = new ScopeWrapper();
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
+    private final List<ProviderWrapper> wrappers = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
 
     /**
      * Create a new Assist instance.
      */
     public Assist() {
+        register(scopeWrapper);
         register(new SingletonScopeFactory());
         register(new ThreadLocalScopeFactory());
+
+        register(new AspectWrapper(this));
         register(new ProviderTypeValueLookup(this));
         register(new PropertyInjector(this));
         register(new InjectAnnotationInterceptor(this));
@@ -381,6 +383,7 @@ public class Assist implements Closeable {
      * @see InstanceInterceptor
      * @see ValueLookup
      * @see ScopeFactory
+     * @see ProviderWrapper
      */
     @SuppressWarnings("unchecked")
     public void register(Object obj) {
@@ -405,14 +408,20 @@ public class Assist implements Closeable {
 
         if (obj instanceof ScopeFactory) {
             ScopeFactory scopeFactory = (ScopeFactory) obj;
-            if (!scopeFactories.containsKey(scopeFactory.target())) {
+            registered = scopeWrapper.register(scopeFactory);
+        }
+
+        if (obj instanceof ProviderWrapper) {
+            ProviderWrapper wrapper = (ProviderWrapper) obj;
+            if (!wrappers.contains(wrapper)) {
                 registered = true;
-                scopeFactories.put(scopeFactory.target(), scopeFactory);
+                wrappers.add(wrapper);
+                wrappers.sort(Prioritized.PRIORITIZED_COMPARATOR);
             }
         }
 
         if (!registered) {
-            log.warn("{} did not implement any known interfaces", obj);
+            log.warn("{} did not implement any known interfaces or was already registered", obj);
         }
     }
 
@@ -431,29 +440,11 @@ public class Assist implements Closeable {
     }
 
     private <T> AssistProvider<T> buildProvider(AssistProvider<T> provider, boolean skipInjection) {
-        return wrapScope(wrapAspects(skipInjection ? provider : wrapInjection(provider)));
-    }
-
-    private <T> AssistProvider<T> wrapInjection(AssistProvider<T> provider) {
-        return new InjectionProvider<>(provider, this);
-    }
-
-    private <T> AssistProvider<T> wrapScope(AssistProvider<T> provider) {
-        Annotation scope = provider.scope();
-        if (scope == null) {
-            return provider;
+        AssistProvider<T> temp = skipInjection ? provider : new InjectionProvider<>(provider, this);
+        for (ProviderWrapper wrapper : wrappers) {
+            temp = wrapper.wrap(temp);
         }
-        ScopeFactory<?> scopeFactory = Objects.requireNonNull(scopeFactories.get(scope.annotationType()), "unknown scope: " + scope + ", register a scope factory to define scope wrappers");
-        return scopeFactory.scope(provider, scope);
-    }
-
-    private <T> AssistProvider<T> wrapAspects(AssistProvider<T> provider) {
-        for (Annotation annotation : provider.annotations()) {
-            if (annotation.annotationType() == Aspects.class) {
-                return new AspectWeaverProvider<>(this, ((Aspects) annotation).value(), provider);
-            }
-        }
-        return provider;
+        return temp;
     }
 
     /**
@@ -650,7 +641,7 @@ public class Assist implements Closeable {
         StringBuilder sb = new StringBuilder();
         sb.append("Assist:\n");
         sb.append(" Scopes:\n  ")
-                .append(scopeFactories.entrySet().stream()
+                .append(scopeWrapper.entrySet().stream()
                         .map(e -> '@' + e.getKey().getSimpleName() + ':' + e.getValue().getClass().getSimpleName())
                         .collect(Collectors.joining("\n  ")))
                 .append("\n");
@@ -659,11 +650,13 @@ public class Assist implements Closeable {
                 .append(interceptors.stream().map(i -> i.toString() + ":" + i.priority()).collect(Collectors.joining("\n  ")))
                 .append("\n");
 
-        if (!valueLookups.isEmpty()) {
-            sb.append(" Lookups:\n  ")
-                    .append(valueLookups.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining("\n  ")))
-                    .append("\n");
-        }
+        sb.append(" Lookups:\n  ")
+                .append(valueLookups.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining("\n  ")))
+                .append("\n");
+
+        sb.append(" Wrappers:\n  ")
+                .append(wrappers.stream().map(i -> i.toString() + ':' + i.priority()).collect(Collectors.joining("\n  ")))
+                .append("\n");
 
         sb.append(" Providers(").append(index.size()).append("):");
         index.allProviders()

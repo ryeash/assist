@@ -11,6 +11,9 @@ public abstract class AssistProviderWrapper<T> implements AssistProvider<T> {
     private final AssistProvider<T> delegate;
 
     protected AssistProviderWrapper(AssistProvider<T> delegate) {
+        if (this == delegate) {
+            throw new IllegalArgumentException("refusing to wrap myself");
+        }
         this.delegate = Objects.requireNonNull(delegate);
     }
 
@@ -42,5 +45,15 @@ public abstract class AssistProviderWrapper<T> implements AssistProvider<T> {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return delegate.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return delegate.hashCode();
     }
 }

@@ -33,7 +33,7 @@ public @interface Factory {
 
     /**
      * True marks the annotated factory method to skip the instance interception stage of the provider workflow. Use
-     * sparingly as this will prevent many of the lifecycle management aspects for provided instances.
+     * sparingly as this will prevent many of the lifecycle management tasks for provided instances.
      *
      * @default false
      */

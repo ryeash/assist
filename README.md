@@ -175,7 +175,7 @@ public class AppConfig {
 When this AppConfig is handed to an addConfig method of Assist, the provider for DAO will automatically
 be called once to force creation of the singleton.
 
-It is technically possible to mark any @Factory eager, but it really only makes sense for @Singleton scope.
+It is technically possible to mark any @Factory eager, but it probably only makes sense for @Singleton scope.
 
 ### @Lazy
 In rare cases it may be necessary to inject a handle to an object before assist is ready to properly wire it; possibly
@@ -287,7 +287,7 @@ public class LoggingAspect implements BeforeMethod, AfterMethod {
     }
 }
 ```
-Then apply the aspect to a factory method using @Aspects(LoggingAspect.class):
+Then apply the aspect to a factory method using ```@Aspects(LoggingAspect.class)```:
 ```java
 @Factory
 @Named("aspect1")
@@ -490,6 +490,49 @@ registered ValueLookups (in prioritized order) until one of them returns a non-n
 A new ValueLookup can be registered with:
 ```java
 assist.register(new CustomValueLookup());
+```
+
+### ProviderWrapper
+
+Perhaps the most powerful means of extensibility is to define and register new 
+[ProviderWrappers](src/main/java/vest/assist/ProviderWrapper.java). ProviderWrappers are used as their name implies:
+to wrap a provider. This allows any arbitrary logic to be performed on either the provider or the instance that it provides.
+Examples include the [AspectWrapper](src/main/java/vest/assist/provider/AspectWrapper.java) and the 
+[ScopeWrapper](src/main/java/vest/assist/provider/ScopeWrapper.java).
+
+For example, creating a wrapper that adds caching to a provider (which would probably be better implemented as a scope,
+but just for the sake of a simple example):
+```java
+public class CachingWrapper implements ProviderWrapper {
+    @Override
+    public <T> AssistProvider<T> wrap(AssistProvider<T> provider) {
+        return new CachedProvider<>(provider);
+    }
+
+    @Override
+    public int priority() {
+        return 60000;  // it is important to define a sane priority
+    }
+
+    public static class CachedProvider<T> extends AssistProviderWrapper<T> {
+
+        private T cached;
+        private long cachedTime = -1L;
+        private long cacheExpiration = 15000;
+
+        protected CachedProvider(AssistProvider<T> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public T get() {
+            if (cached == null || (System.currentTimeMillis() > cachedTime + cacheExpiration)) {
+                cached = super.get();
+            }
+            return cached;
+        }
+    }
+}
 ```
 
 ### Prioritized
