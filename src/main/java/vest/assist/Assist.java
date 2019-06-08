@@ -369,7 +369,7 @@ public class Assist implements Closeable {
         }
 
         // run through the injection workflow as the last step
-        // allows e.g. @Inject methods to be called that include any final initialization to happen
+        // allows e.g. @Inject methods to be called that include any final initialization
         inject(config);
 
         log.info("Finished processing configuration class {}", Reflector.debugName(config.getClass()));
