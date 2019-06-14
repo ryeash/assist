@@ -38,6 +38,16 @@ public abstract class AssistProviderWrapper<T> implements AssistProvider<T> {
     }
 
     @Override
+    public boolean eager() {
+        return delegate.eager();
+    }
+
+    @Override
+    public boolean primary() {
+        return delegate.primary();
+    }
+
+    @Override
     public T get() {
         return delegate.get();
     }

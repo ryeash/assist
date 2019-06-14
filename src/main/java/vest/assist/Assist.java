@@ -2,9 +2,12 @@ package vest.assist;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vest.assist.annotations.Configuration;
+import vest.assist.annotations.Eager;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Import;
 import vest.assist.annotations.Scan;
+import vest.assist.annotations.SkipInjection;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.AspectWrapper;
 import vest.assist.provider.ConstructorProvider;
@@ -12,7 +15,6 @@ import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectAnnotationInterceptor;
 import vest.assist.provider.InjectionProvider;
 import vest.assist.provider.LazyProvider;
-import vest.assist.provider.PrimaryProvider;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ProviderTypeValueLookup;
 import vest.assist.provider.ScheduledTaskInterceptor;
@@ -38,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -91,7 +94,7 @@ public class Assist implements Closeable {
     /**
      * Create a new Assist instance.
      */
-    public Assist() {
+    public Assist(String... configurationScanBasePackages) {
         register(scopeWrapper);
         register(new SingletonScopeFactory());
         register(new ThreadLocalScopeFactory());
@@ -107,6 +110,10 @@ public class Assist implements Closeable {
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);
 
+        Optional.ofNullable(configurationScanBasePackages)
+                .map(Stream::of)
+                .orElse(Stream.empty())
+                .forEach(p -> packageScan(p, Configuration.class, this::addConfig));
     }
 
     /**
@@ -333,22 +340,21 @@ public class Assist implements Closeable {
         List<FactoryMethodProvider> eagerFactories = new LinkedList<>();
         for (Method method : reflector.methods()) {
             if (method.isAnnotationPresent(Factory.class)) {
-                Factory factoryAnnotation = method.getAnnotation(Factory.class);
                 Class<?> returnType = method.getReturnType();
                 if (returnType == Void.TYPE) {
                     throw new IllegalArgumentException(reflector.simpleName() + ": factory methods may not return void: " + Reflector.detailString(method));
                 }
 
                 FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
-                AssistProvider p = buildProvider(factory, factoryAnnotation.skipInjection());
+                AssistProvider p = buildProvider(factory, method.isAnnotationPresent(SkipInjection.class));
 
                 log.info("{}: adding provider {} {}", Reflector.debugName(config.getClass()), returnType.getSimpleName(), p);
                 index.setProvider(p);
-                if (factory.qualifier() != null && factory.isPrimary()) {
-                    log.info("\\- will be added as primary provider");
-                    index.setProvider(new PrimaryProvider<>(p));
-                }
-                if (factory.isEager()) {
+//                if (factory.qualifier() != null && factory.primary()) {
+//                    log.info("\\- will be added as primary provider");
+//                    index.setProvider(new PrimaryProvider<>(p));
+//                }
+                if (factory.eager()) {
                     eagerFactories.add(factory);
                 }
             }
@@ -481,6 +487,9 @@ public class Assist implements Closeable {
         }
         AssistProvider<T> provider = buildProvider(new ConstructorProvider<>(interfaceOrAbstract, concreteImplementation, this), false);
         index.setProvider(provider);
+        if (concreteImplementation.isAnnotationPresent(Eager.class)) {
+            provider.get();
+        }
     }
 
     /**
@@ -542,8 +551,8 @@ public class Assist implements Closeable {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);
             Annotation qualifier = Reflector.of(type).qualifier();
-            Provider<?> provider = index.getOrCreate(type, qualifier, (t, q) -> buildConstructorProvider(t));
-            if (provider != null) {
+            AssistProvider<?> provider = index.getOrCreate(type, qualifier, this::buildConstructorProvider);
+            if (provider != null && provider.eager()) {
                 provider.get();
             }
         });

@@ -3,6 +3,8 @@ package vest.assist.provider;
 import vest.assist.Assist;
 import vest.assist.AssistProvider;
 import vest.assist.Reflector;
+import vest.assist.annotations.Eager;
+import vest.assist.annotations.Primary;
 
 import javax.inject.Inject;
 import java.lang.annotation.Annotation;
@@ -31,6 +33,8 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
     private final List<Annotation> annotations;
     private final Annotation scope;
     private final Annotation qualifier;
+    private final boolean eager;
+    private final boolean primary;
 
     public ConstructorProvider(Class<T> type, Assist assist) {
         this(type, type, assist);
@@ -44,6 +48,8 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
         this.annotations = Collections.unmodifiableList(Arrays.asList(realType.getAnnotations()));
         this.scope = Reflector.getScope(realType);
         this.qualifier = Reflector.getQualifier(realType);
+        this.eager = realType.isAnnotationPresent(Eager.class);
+        this.primary = realType.isAnnotationPresent(Primary.class);
     }
 
     @Override
@@ -64,6 +70,16 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
     @Override
     public List<Annotation> annotations() {
         return annotations;
+    }
+
+    @Override
+    public boolean eager() {
+        return eager;
+    }
+
+    @Override
+    public boolean primary() {
+        return primary;
     }
 
     @Override

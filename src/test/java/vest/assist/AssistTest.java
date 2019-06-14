@@ -7,6 +7,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.SkipInjection;
 import vest.assist.app.BootConfig;
 import vest.assist.app.Child;
 import vest.assist.app.CoffeeMaker;
@@ -80,6 +81,8 @@ public class AssistTest extends Assert {
     public void testInit() {
         log.info("{}", assist);
         assertEquals(assist.instance(Assist.class), assist);
+
+        assist.providerFor(CoffeeMaker.class).get();
     }
 
     @Test
@@ -400,7 +403,8 @@ public class AssistTest extends Assert {
     public void testSkipInjection() {
         Assist assist = new Assist();
         assist.addConfig(new Object() {
-            @Factory(skipInjection = true)
+            @Factory
+            @SkipInjection
             public TCSkipInjection skipInjectionFactory() {
                 return new TCSkipInjection();
             }

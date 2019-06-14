@@ -4,6 +4,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import vest.assist.annotations.Aspects;
+import vest.assist.annotations.Eager;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Lazy;
 import vest.assist.annotations.Scheduled;
@@ -190,7 +191,8 @@ public class AssistNegativeTest extends Assert {
 
         assertThrows(IllegalArgumentException.class, () -> {
             a.addConfig(new Object() {
-                @Factory(eager = true)
+                @Factory
+                @Eager
                 @Aspects({TimingAspect.class, TimingAspect.class})
                 public CharSequence cs() {
                     return "";

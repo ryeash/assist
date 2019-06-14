@@ -3,7 +3,8 @@ package vest.assist.provider;
 import vest.assist.Assist;
 import vest.assist.AssistProvider;
 import vest.assist.Reflector;
-import vest.assist.annotations.Factory;
+import vest.assist.annotations.Eager;
+import vest.assist.annotations.Primary;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -27,8 +28,8 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
     private final Parameter[] methodParameters;
     private final Object instance;
     private final List<Annotation> annotations;
-
-    private final Factory factory;
+    private final boolean eager;
+    private final boolean primary;
 
     @SuppressWarnings("unchecked")
     public FactoryMethodProvider(Method method, Object instance, Assist assist) {
@@ -41,15 +42,8 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
         this.methodParameters = method.getParameters();
         this.instance = instance;
         this.annotations = Collections.unmodifiableList(Arrays.asList(method.getAnnotations()));
-        this.factory = Objects.requireNonNull(method.getAnnotation(Factory.class));
-    }
-
-    public boolean isEager() {
-        return factory.eager();
-    }
-
-    public boolean isPrimary() {
-        return factory.primary();
+        this.eager = method.isAnnotationPresent(Eager.class);
+        this.primary = method.isAnnotationPresent(Primary.class);
     }
 
     @Override
@@ -70,6 +64,16 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
     @Override
     public List<Annotation> annotations() {
         return annotations;
+    }
+
+    @Override
+    public boolean eager() {
+        return eager;
+    }
+
+    @Override
+    public boolean primary() {
+        return primary;
     }
 
     @Override

@@ -7,10 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method in a configuration class as a Factory that can be used to create a MethodProvider.
+ * Indicates the provider should be considered primary, that is, registered with and without a qualifier (if it has one).
  */
-@Target(value = ElementType.METHOD)
+@Target(value = {ElementType.METHOD, ElementType.TYPE})
 @Retention(value = RetentionPolicy.RUNTIME)
 @Documented
-public @interface Factory {
+public @interface Primary {
 }
