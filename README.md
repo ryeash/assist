@@ -133,13 +133,14 @@ Application app = assist.instance(Application.class);
 // > french press brewing
 ```
 
-### Primary
+### @Primary
 
 In case you have multiple qualified factory methods returning the same type,
 you can mark one of them as primary:
 ```java
 public class AppConfig {
-    @Factory(primary = true)
+    @Factory
+    @Primary
     @Singleton
     @Named("his")
     public CoffeMaker coffeeMakerFactory(){
@@ -156,16 +157,17 @@ CoffeeMaker cm = assist.instance(CoffeeMaker.class);
 assert cm instanceof FrenchPress // true
 ```
 
-Implementation note: internally, marking a qualified provider with 'primary=true' will cause
+Implementation note: internally, marking a qualified provider with `@Primary` will cause
 two providers to be registered for the factory, one with the qualifier, one without.
 
-### Eager
+### @Eager
 
-Sometimes you want your @Singletons to not be so lazy. Mark the @Factory as eager to force creation of the
+Sometimes you want your @Singletons to not be so lazy. Mark the factory method with `@Eager` to force creation of the
 instance during configuration processing.
 ```java
 public class AppConfig {
-    @Factory(eager = true)
+    @Factory
+    @Eager
     @Singleton
     public DAO daoFactory(){
         return new MySqlDAOImpl();
@@ -176,6 +178,20 @@ When this AppConfig is handed to an addConfig method of Assist, the provider for
 be called once to force creation of the singleton.
 
 It is technically possible to mark any @Factory eager, but it probably only makes sense for @Singleton scope.
+
+
+### @SkipInjection
+
+It may happen that you create a factory that returns an instance that you don't want to implicitly inject. In this case
+you can mark a factory method with `@SkipInjection` to prevent any `@Inject` marked fields and methods from being injected.
+```java
+@Factory
+@SkipInjection
+public CoffeeMaker skipInjectionCoffeeMakerFactory() {
+    return new IndependentDripper();
+}
+```
+In this case the provider created for this factory method will not perform any injection for the returned instance.
 
 ### @Lazy
 In rare cases it may be necessary to inject a handle to an object before assist is ready to properly wire it; possibly
@@ -540,6 +556,7 @@ The configuration related interfaces in the assist module all implement the Prio
 control the order of execution for InstanceInterceptors and ValueLookups. The default priority
 is 1000. There's no simple rule for what priority should be set to for custom configurations, but you can use
 assist.toString() to get a diagnostic printout of what Assist has registered and the order of execution.
+
 
 ## Best Practices
 

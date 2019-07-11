@@ -12,6 +12,10 @@
     <description>Simple dependency injection framework based on javax.inject.</description>
     <url>https://github.com/ryeash/assist</url>
 
+    <prerequisites>
+        <maven>3.0.0</maven>
+    </prerequisites>
+
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -69,7 +73,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.1</version>
                 <configuration>
                     <verbose>false</verbose>
                     <fork>false</fork>
@@ -113,7 +117,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -126,7 +130,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
