@@ -172,8 +172,11 @@ public class DefaultConfigurationFacade implements ConfigurationFacade {
             i++;
             prev = i;
         }
+        String trimmed = str.substring(prev).trim();
+        if (!trimmed.isEmpty()) {
+            list.add(trimmed);
+        }
         list.add(str.substring(prev).trim());
-        list.removeIf(String::isEmpty);
         return list;
     }
 }

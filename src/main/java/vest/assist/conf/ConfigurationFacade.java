@@ -154,28 +154,6 @@ public interface ConfigurationFacade extends ConfigurationSource {
     }
 
     /**
-     * Get a property value, interpreted as a comma delimited set.
-     *
-     * @param propertyName the property name
-     * @return A set of values, or an empty set if the property is not found
-     */
-    default Set<String> getSet(String propertyName) {
-        return getSet(propertyName, String.class);
-    }
-
-    /**
-     * Get a property value, interpreted as a comma delimited set. Or use the fallback set
-     * if the property is not found.
-     *
-     * @param propertyName the property name
-     * @param fallback     the fallback value
-     * @return A set of values, or the fallback if the property is not found
-     */
-    default Set<String> getSet(String propertyName, Set<String> fallback) {
-        return getSet(propertyName, String.class, fallback);
-    }
-
-    /**
      * Get a property value, interpreted as a comma delimited list of values converted to the given type.
      *
      * @param propertyName the property name
@@ -196,8 +174,31 @@ public interface ConfigurationFacade extends ConfigurationSource {
      * @return A list of values, or the fallback if the property is not found
      */
     default <T> List<T> getList(String propertyName, Class<T> genericType, List<T> fallback) {
-        List<T> list = getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(ArrayList::new));
+        List<T> list = getStream(propertyName, genericType, fallback != null ? fallback.stream() : Stream.empty())
+                .collect(Collectors.toCollection(ArrayList::new));
         return Collections.unmodifiableList(list);
+    }
+
+    /**
+     * Get a property value, interpreted as a comma delimited set.
+     *
+     * @param propertyName the property name
+     * @return A set of values, or an empty set if the property is not found
+     */
+    default Set<String> getSet(String propertyName) {
+        return getSet(propertyName, String.class);
+    }
+
+    /**
+     * Get a property value, interpreted as a comma delimited set. Or use the fallback set
+     * if the property is not found.
+     *
+     * @param propertyName the property name
+     * @param fallback     the fallback value
+     * @return A set of values, or the fallback if the property is not found
+     */
+    default Set<String> getSet(String propertyName, Set<String> fallback) {
+        return getSet(propertyName, String.class, fallback);
     }
 
     /**
@@ -221,7 +222,8 @@ public interface ConfigurationFacade extends ConfigurationSource {
      * @return A set of value, or the fallback if the property is not found
      */
     default <T> Set<T> getSet(String propertyName, Class<T> genericType, Set<T> fallback) {
-        Set<T> set = getStream(propertyName, genericType, fallback.stream()).collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<T> set = getStream(propertyName, genericType, fallback != null ? fallback.stream() : Stream.empty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         return Collections.unmodifiableSet(set);
     }
 

@@ -40,7 +40,7 @@ public class CachingFacade implements InvokeMethod {
 
     @Override
     public Object invoke(Invocation invocation) throws Throwable {
-        if (invocation.getMethod().getName().startsWith("get")) {
+        if (invocation.getMethod().getName().startsWith("get") && !invocation.getMethod().getName().equals("getStream")) {
             return cache.computeIfAbsent(invocation, this::invokeMethod);
         }
         switch (invocation.getMethod().getName()) {
