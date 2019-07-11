@@ -43,6 +43,16 @@ public class AdHocProvider<T> implements AssistProvider<T> {
     }
 
     @Override
+    public boolean eager() {
+        return false;
+    }
+
+    @Override
+    public boolean primary() {
+        return false;
+    }
+
+    @Override
     public T get() {
         return instance;
     }

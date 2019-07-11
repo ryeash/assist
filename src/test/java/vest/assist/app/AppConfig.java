@@ -3,7 +3,9 @@ package vest.assist.app;
 import org.testng.Assert;
 import vest.assist.Assist;
 import vest.assist.annotations.Aspects;
+import vest.assist.annotations.Eager;
 import vest.assist.annotations.Factory;
+import vest.assist.annotations.Primary;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.ThreadLocal;
 import vest.assist.conf.ConfigurationFacade;
@@ -38,7 +40,8 @@ public class AppConfig extends BaseAppConfig {
         return new ByteArrayInputStream(new byte[0]);
     }
 
-    @Factory(primary = true)
+    @Factory
+    @Primary
     @Named("frenchPress")
     @ThreadLocal
     public CoffeeMaker frenchPress() {
@@ -57,7 +60,8 @@ public class AppConfig extends BaseAppConfig {
         return new Coosie("black");
     }
 
-    @Factory(eager = true)
+    @Factory
+    @Eager
     @Leather(color = Leather.Color.RED)
     @Singleton
     public Coosie redLeatherCoosie() {

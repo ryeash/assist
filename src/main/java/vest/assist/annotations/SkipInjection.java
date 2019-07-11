@@ -7,10 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method in a configuration class as a Factory that can be used to create a MethodProvider.
+ * Indicates that the instances provided by the factory provider created for a @Factory marked method
+ * should not be analyzed for @Inject fields or methods.
  */
 @Target(value = ElementType.METHOD)
 @Retention(value = RetentionPolicy.RUNTIME)
 @Documented
-public @interface Factory {
+public @interface SkipInjection {
 }

@@ -7,10 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method in a configuration class as a Factory that can be used to create a MethodProvider.
+ * Marks a class as an application configuration class. Enables classpath scanning and automatic discovery of
+ * configuration sources.
  */
-@Target(value = ElementType.METHOD)
-@Retention(value = RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Factory {
+public @interface Configuration {
 }

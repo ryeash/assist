@@ -1,12 +1,11 @@
 package vest.assist.provider;
 
 import vest.assist.AssistProvider;
-import vest.assist.annotations.Factory;
 
 import java.lang.annotation.Annotation;
 
 /**
- * Used internally to support {@link Factory#primary().}
+ * Used internally to support {@link vest.assist.annotations.Primary}
  */
 public class PrimaryProvider<T> extends AssistProviderWrapper<T> {
 

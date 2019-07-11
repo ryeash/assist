@@ -1,6 +1,7 @@
 package vest.assist;
 
-import javax.inject.Provider;
+import vest.assist.provider.PrimaryProvider;
+
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +28,7 @@ class ProviderIndex {
     ProviderIndex() {
     }
 
-    public void setProvider(AssistProvider<?> provider) {
+    void setProvider(AssistProvider<?> provider) {
         writeLock.lock();
         try {
             Node temp = root;
@@ -46,7 +47,7 @@ class ProviderIndex {
         }
     }
 
-    public Provider getProvider(Class type, Annotation qualifier) {
+    AssistProvider getProvider(Class type, Annotation qualifier) {
         return Optional.ofNullable(inverse.get(type))
                 .orElse(Collections.emptyList())
                 .stream()
@@ -56,8 +57,8 @@ class ProviderIndex {
                 .orElse(null);
     }
 
-    public Provider getOrCreate(Class type, Annotation qualifier, BiFunction<Class, Annotation, AssistProvider<?>> function) {
-        Provider provider = getProvider(type, qualifier);
+    AssistProvider getOrCreate(Class type, Annotation qualifier, BiFunction<Class, Annotation, AssistProvider<?>> function) {
+        AssistProvider provider = getProvider(type, qualifier);
         if (provider != null) {
             return provider;
         }
@@ -75,7 +76,7 @@ class ProviderIndex {
         }
     }
 
-    public Stream<AssistProvider> getProviders(Class type) {
+    Stream<AssistProvider> getProviders(Class type) {
         return Optional.ofNullable(inverse.get(type))
                 .orElse(Collections.emptyList())
                 .stream()
@@ -83,19 +84,19 @@ class ProviderIndex {
                 .distinct();
     }
 
-    public Stream<AssistProvider> getProvidersWithAnnotation(Class<? extends Annotation> type) {
+    Stream<AssistProvider> getProvidersWithAnnotation(Class<? extends Annotation> type) {
         return annotationTypeToProvider.getOrDefault(type, Collections.emptyList()).stream();
     }
 
-    public boolean exists(Class type, Annotation qualifier) {
+    boolean exists(Class type, Annotation qualifier) {
         return getProvider(type, qualifier) != null;
     }
 
-    public Stream<AssistProvider> allProviders() {
+    Stream<AssistProvider> allProviders() {
         return root.getProviders();
     }
 
-    public int size() {
+    int size() {
         return size;
     }
 
@@ -103,7 +104,8 @@ class ProviderIndex {
         private Map<Class, Node> sub;
         private Map<Annotation, AssistProvider> providers;
 
-        public void putProvider(AssistProvider provider) {
+        @SuppressWarnings("unchecked")
+        void putProvider(AssistProvider provider) {
             if (providers == null) {
                 providers = new HashMap<>(16);
             }
@@ -111,25 +113,32 @@ class ProviderIndex {
                 throw new IllegalArgumentException("there is already a provider registered under: " + provider.qualifier() + ":" + provider.type());
             }
             providers.put(provider.qualifier(), provider);
+
+            if (provider.qualifier() != null && provider.primary()) {
+                if (providers.containsKey(null)) {
+                    throw new IllegalArgumentException("there is already a primary provider registered for type: " + provider.type());
+                }
+                providers.putIfAbsent(null, new PrimaryProvider<>(provider));
+            }
         }
 
-        public Node getOrCreate(Class type) {
+        Node getOrCreate(Class type) {
             if (sub == null) {
                 sub = new HashMap<>(16);
             }
             return sub.computeIfAbsent(type, t -> new Node());
         }
 
-        public Provider getProvider(Annotation qualifier) {
+        AssistProvider getProvider(Annotation qualifier) {
             if (providers != null && providers.containsKey(qualifier)) {
-                Provider provider = providers.get(qualifier);
+                AssistProvider provider = providers.get(qualifier);
                 if (provider != null) {
                     return provider;
                 }
             }
             if (sub != null) {
                 for (Node value : sub.values()) {
-                    Provider provider = value.getProvider(qualifier);
+                    AssistProvider provider = value.getProvider(qualifier);
                     if (provider != null) {
                         return provider;
                     }
@@ -138,7 +147,7 @@ class ProviderIndex {
             return null;
         }
 
-        public Stream<AssistProvider> getProviders() {
+        Stream<AssistProvider> getProviders() {
             Stream<AssistProvider> prim = Stream.empty();
             if (providers != null) {
                 prim = providers.values().stream();

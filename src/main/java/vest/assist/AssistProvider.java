@@ -29,4 +29,8 @@ public interface AssistProvider<T> extends Provider<T> {
      */
     List<Annotation> annotations();
 
+    boolean eager();
+
+    boolean primary();
+
 }
