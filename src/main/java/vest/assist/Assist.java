@@ -349,11 +349,10 @@ public class Assist implements Closeable {
                 AssistProvider p = buildProvider(factory, method.isAnnotationPresent(SkipInjection.class));
 
                 log.info("{}: adding provider {} {}", Reflector.debugName(config.getClass()), returnType.getSimpleName(), p);
+                if (factory.qualifier() != null && factory.primary()) {
+                    log.info("\\- will be added as primary provider");
+                }
                 index.setProvider(p);
-//                if (factory.qualifier() != null && factory.primary()) {
-//                    log.info("\\- will be added as primary provider");
-//                    index.setProvider(new PrimaryProvider<>(p));
-//                }
                 if (factory.eager()) {
                     eagerFactories.add(factory);
                 }
@@ -391,7 +390,6 @@ public class Assist implements Closeable {
      * @see ScopeFactory
      * @see ProviderWrapper
      */
-    @SuppressWarnings("unchecked")
     public void register(Object obj) {
         boolean registered = false;
         if (obj instanceof ValueLookup) {
@@ -429,10 +427,6 @@ public class Assist implements Closeable {
         if (!registered) {
             log.warn("{} did not implement any known interfaces or was already registered", obj);
         }
-    }
-
-    private <T> AssistProvider<T> buildConstructorProvider(Class<T> type) {
-        return buildConstructorProvider(type, null);
     }
 
     private <T> AssistProvider<T> buildConstructorProvider(Class<T> type, Annotation qualifier) {
@@ -546,7 +540,6 @@ public class Assist implements Closeable {
      *                    example: Singleton.class
      * @see #packageScan(String, Class, Consumer)
      */
-    @SuppressWarnings("unchecked")
     public void packageScan(String basePackage, Class<? extends Annotation> target) {
         packageScan(basePackage, target, type -> {
             log.info("  scanned class: {}", type);

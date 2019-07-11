@@ -42,4 +42,9 @@ public class ScopeWrapper implements ProviderWrapper {
     public int priority() {
         return 100000;
     }
+
+    @Override
+    public String toString() {
+        return "ScopeWrapper{scopeFactories=" + scopeFactories + '}';
+    }
 }

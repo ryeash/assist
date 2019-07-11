@@ -104,6 +104,7 @@ class ProviderIndex {
         private Map<Class, Node> sub;
         private Map<Annotation, AssistProvider> providers;
 
+        @SuppressWarnings("unchecked")
         void putProvider(AssistProvider provider) {
             if (providers == null) {
                 providers = new HashMap<>(16);
