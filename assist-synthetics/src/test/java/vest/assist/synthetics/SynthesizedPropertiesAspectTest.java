@@ -24,5 +24,6 @@ public class SynthesizedPropertiesAspectTest {
         AppProperties instance = assist.instance(AppProperties.class);
         Assert.assertEquals(instance.stringProp(), "value");
         Assert.assertEquals(instance.numbers(), Arrays.asList(1, 1, 2, 3, 5, 8, 13));
+        System.out.println(instance.nothing());
     }
 }

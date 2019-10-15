@@ -16,7 +16,7 @@ public class JPAExtension implements AssistExtension, ConfigurationProcessor {
     public static final String PRIMARY = "primary";
 
     @Override
-    public void bootstrap(Assist assist) {
+    public void load(Assist assist) {
         assist.register(this);
     }
 

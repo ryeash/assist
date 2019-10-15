@@ -90,10 +90,10 @@ public class Assist implements Closeable {
     private final ProviderIndex index = new ProviderIndex();
     private final ScopeWrapper scopeWrapper = new ScopeWrapper();
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
+    private final List<PlaceholderLookup> placeholderLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final List<ProviderWrapper> wrappers = new ArrayList<>(8);
     private final List<ConfigurationProcessor> configurationProcessors = new ArrayList<>(8);
-    private final List<AssistExtension> extensions = new ArrayList<>(8);
     private final ShutdownContainer shutdownContainer;
 
     /**
@@ -118,7 +118,7 @@ public class Assist implements Closeable {
 
         for (AssistExtension assistExtension : ServiceLoader.load(AssistExtension.class)) {
             log.info("loading extension: {}", assistExtension);
-            assistExtension.bootstrap(this);
+            assistExtension.load(this);
         }
 
         Optional.ofNullable(configurationScanBasePackages)
@@ -456,6 +456,14 @@ public class Assist implements Closeable {
             }
         }
 
+        if (obj instanceof PlaceholderLookup) {
+            PlaceholderLookup placeholderLookup = (PlaceholderLookup) obj;
+            if (!placeholderLookups.contains(placeholderLookup)) {
+                registered = true;
+                placeholderLookups.add(placeholderLookup);
+                placeholderLookups.sort(Prioritized.PRIORITIZED_COMPARATOR);
+            }
+        }
         if (!registered) {
             log.warn("{} did not implement any known interfaces or was already registered", obj);
         }

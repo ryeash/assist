@@ -1,9 +1,8 @@
-package vest.assist.synthetics;
+package vest.assist.conf;
 
 import vest.assist.annotations.Property;
 import vest.assist.aop.Invocation;
 import vest.assist.aop.InvokeMethod;
-import vest.assist.conf.ConfigurationFacade;
 import vest.assist.util.Reflector;
 
 import javax.inject.Inject;

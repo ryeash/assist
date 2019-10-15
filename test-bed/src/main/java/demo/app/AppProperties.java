@@ -1,4 +1,4 @@
-package vest.assist.synthetics.app;
+package demo.app;
 
 import vest.assist.annotations.Property;
 

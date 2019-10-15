@@ -13,6 +13,7 @@
         <module>assist-jpa</module>
         <module>assist-synthetics</module>
         <module>test-bed</module>
+        <module>assist-configuration</module>
     </modules>
 
     <name>assist</name>
