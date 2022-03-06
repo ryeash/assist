@@ -1,7 +1,7 @@
 package vest.assist.jpa.app;
 
 import vest.assist.annotations.Configuration;
-import vest.assist.jpa.JPAExtension;
+import vest.assist.jpa.JPAContextBootstrapper;
 
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceProperty;
@@ -12,7 +12,7 @@ import javax.persistence.SynchronizationType;
         unitName = "jpa-test",
         synchronization = SynchronizationType.SYNCHRONIZED,
         properties = {
-                @PersistenceProperty(name = JPAExtension.PRIMARY, value = "true")
+                @PersistenceProperty(name = JPAContextBootstrapper.PRIMARY, value = "true")
         })
 public class JpaAppConfig {
 }

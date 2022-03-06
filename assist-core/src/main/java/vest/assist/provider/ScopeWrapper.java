@@ -4,6 +4,7 @@ import vest.assist.AssistProvider;
 import vest.assist.ProviderWrapper;
 import vest.assist.ScopeFactory;
 
+import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.Set;
 /**
  * Used internally to attach a scope to a provider.
  */
+@Singleton
 public class ScopeWrapper implements ProviderWrapper {
     private final Map<Class<? extends Annotation>, ScopeFactory<?>> scopeFactories = new HashMap<>(8);
 

@@ -4,8 +4,7 @@ import vest.assist.annotations.Configuration;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.conf.ConfigurationFacade;
-import vest.assist.jpa.JPAExtension;
-import vest.assist.synthetics.SyntheticProperties;
+import vest.assist.jpa.JPAContextBootstrapper;
 
 import javax.inject.Singleton;
 import javax.persistence.PersistenceContext;
@@ -18,9 +17,8 @@ import javax.persistence.SynchronizationType;
         unitName = "jpa-test",
         synchronization = SynchronizationType.SYNCHRONIZED,
         properties = {
-                @PersistenceProperty(name = JPAExtension.PRIMARY, value = "true")
+                @PersistenceProperty(name = JPAContextBootstrapper.PRIMARY, value = "true")
         })
-@SyntheticProperties(AppProperties.class)
 public class AppConfig {
 
     @Factory

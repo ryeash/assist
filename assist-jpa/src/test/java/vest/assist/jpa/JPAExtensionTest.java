@@ -9,7 +9,7 @@ import vest.assist.jpa.app.Message;
 
 public class JPAExtensionTest {
 
-    private static Logger log = LoggerFactory.getLogger(JPAExtension.class);
+    private static Logger log = LoggerFactory.getLogger(JPAContextBootstrapper.class);
 
     Assist assist;
 

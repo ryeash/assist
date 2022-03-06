@@ -1,7 +1,7 @@
 package vest.assist.jpa;
 
 import vest.assist.Assist;
-import vest.assist.AssistExtension;
+import vest.assist.AssistContextBootstrapper;
 import vest.assist.ConfigurationProcessor;
 
 import javax.persistence.EntityManagerFactory;
@@ -11,7 +11,7 @@ import javax.persistence.PersistenceProperty;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JPAExtension implements AssistExtension, ConfigurationProcessor {
+public class JPAContextBootstrapper implements AssistContextBootstrapper, ConfigurationProcessor {
 
     public static final String PRIMARY = "primary";
 

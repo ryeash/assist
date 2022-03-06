@@ -9,20 +9,12 @@ import vest.assist.annotations.Import;
 import vest.assist.annotations.Scan;
 import vest.assist.annotations.SkipInjection;
 import vest.assist.provider.AdHocProvider;
-import vest.assist.provider.AspectWrapper;
 import vest.assist.provider.ConstructorProvider;
 import vest.assist.provider.FactoryMethodProvider;
-import vest.assist.provider.InjectAnnotationInterceptor;
 import vest.assist.provider.InjectionProvider;
-import vest.assist.provider.LazyLookup;
 import vest.assist.provider.LazyProvider;
-import vest.assist.provider.PropertyInjector;
-import vest.assist.provider.ProviderTypeValueLookup;
-import vest.assist.provider.ScheduledTaskInterceptor;
 import vest.assist.provider.ScopeWrapper;
 import vest.assist.provider.ShutdownContainer;
-import vest.assist.provider.SingletonScopeFactory;
-import vest.assist.provider.ThreadLocalScopeFactory;
 import vest.assist.util.MethodTarget;
 import vest.assist.util.PackageScanner;
 import vest.assist.util.Reflector;
@@ -88,7 +80,6 @@ public class Assist implements Closeable {
     }
 
     private final ProviderIndex index = new ProviderIndex();
-    private final ScopeWrapper scopeWrapper = new ScopeWrapper();
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
     private final List<PlaceholderLookup> placeholderLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
@@ -100,25 +91,15 @@ public class Assist implements Closeable {
      * Create a new Assist instance.
      */
     public Assist(String... configurationScanBasePackages) {
-        register(scopeWrapper);
-        register(new SingletonScopeFactory());
-        register(new ThreadLocalScopeFactory());
-
-        register(new AspectWrapper(this));
-        register(new ProviderTypeValueLookup(this));
-        register(new PropertyInjector(this));
-        register(new InjectAnnotationInterceptor(this));
-        register(new ScheduledTaskInterceptor(this));
-        register(new LazyLookup(this));
         this.shutdownContainer = new ShutdownContainer();
         register(this.shutdownContainer);
 
         // allow the Assist to inject itself into object instances
         setSingleton(Assist.class, this);
 
-        for (AssistExtension assistExtension : ServiceLoader.load(AssistExtension.class)) {
-            log.info("loading extension: {}", assistExtension);
-            assistExtension.load(this);
+        for (AssistContextBootstrapper assistContextBootstrapper : ServiceLoader.load(AssistContextBootstrapper.class)) {
+            log.info("loading extension: {}", assistContextBootstrapper);
+            assistContextBootstrapper.load(this);
         }
 
         Optional.ofNullable(configurationScanBasePackages)
@@ -434,6 +415,7 @@ public class Assist implements Closeable {
         }
 
         if (obj instanceof ScopeFactory) {
+            ScopeWrapper scopeWrapper = instance(ScopeWrapper.class);
             ScopeFactory scopeFactory = (ScopeFactory) obj;
             registered = scopeWrapper.register(scopeFactory);
         }
@@ -691,6 +673,7 @@ public class Assist implements Closeable {
 
     @Override
     public String toString() {
+        ScopeWrapper scopeWrapper = instance(ScopeWrapper.class);
         StringBuilder sb = new StringBuilder();
         sb.append("Assist:\n");
         sb.append(" Scopes:\n  ")

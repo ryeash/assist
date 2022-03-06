@@ -1,7 +1,5 @@
 package vest.assist.util;
 
-import sun.reflect.CallerSensitive;
-
 import javax.inject.Inject;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
@@ -94,52 +92,42 @@ public class FieldTarget implements AnnotatedElement {
         return field.toGenericString();
     }
 
-    @CallerSensitive
     public Object get(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.get(obj);
     }
 
-    @CallerSensitive
     public boolean getBoolean(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getBoolean(obj);
     }
 
-    @CallerSensitive
     public byte getByte(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getByte(obj);
     }
 
-    @CallerSensitive
     public char getChar(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getChar(obj);
     }
 
-    @CallerSensitive
     public short getShort(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getShort(obj);
     }
 
-    @CallerSensitive
     public int getInt(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getInt(obj);
     }
 
-    @CallerSensitive
     public long getLong(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getLong(obj);
     }
 
-    @CallerSensitive
     public float getFloat(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getFloat(obj);
     }
 
-    @CallerSensitive
     public double getDouble(Object obj) throws IllegalArgumentException, IllegalAccessException {
         return field.getDouble(obj);
     }
 
-    @CallerSensitive
     public void set(Object obj, Object value) throws Throwable {
         if (isStatic) {
             setter.invoke(value);
@@ -148,42 +136,34 @@ public class FieldTarget implements AnnotatedElement {
         }
     }
 
-    @CallerSensitive
     public void setBoolean(Object obj, boolean z) throws Throwable {
         setter.invokeExact(obj, z);
     }
 
-    @CallerSensitive
     public void setByte(Object obj, byte b) throws IllegalArgumentException, IllegalAccessException {
         field.setByte(obj, b);
     }
 
-    @CallerSensitive
     public void setChar(Object obj, char c) throws IllegalArgumentException, IllegalAccessException {
         field.setChar(obj, c);
     }
 
-    @CallerSensitive
     public void setShort(Object obj, short s) throws IllegalArgumentException, IllegalAccessException {
         field.setShort(obj, s);
     }
 
-    @CallerSensitive
     public void setInt(Object obj, int i) throws IllegalArgumentException, IllegalAccessException {
         field.setInt(obj, i);
     }
 
-    @CallerSensitive
     public void setLong(Object obj, long l) throws IllegalArgumentException, IllegalAccessException {
         field.setLong(obj, l);
     }
 
-    @CallerSensitive
     public void setFloat(Object obj, float f) throws IllegalArgumentException, IllegalAccessException {
         field.setFloat(obj, f);
     }
 
-    @CallerSensitive
     public void setDouble(Object obj, double d) throws IllegalArgumentException, IllegalAccessException {
         field.setDouble(obj, d);
     }
