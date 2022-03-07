@@ -1,9 +1,8 @@
 package vest.assist.app;
 
+import jakarta.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.inject.Named;
 
 @Named("k")
 public class Keurig implements CoffeeMaker {

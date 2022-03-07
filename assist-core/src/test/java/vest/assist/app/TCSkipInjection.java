@@ -1,13 +1,9 @@
 package vest.assist.app;
 
+import jakarta.inject.Inject;
 import org.testng.Assert;
 
-import javax.inject.Inject;
-
 public class TCSkipInjection {
-
-    @Inject
-    public CoffeeMaker coffeMaker;
 
     @Inject
     public void shouldNotRun() {

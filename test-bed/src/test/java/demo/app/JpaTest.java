@@ -3,17 +3,19 @@ package demo.app;
 import demo.app.model.Message;
 import org.testng.annotations.Test;
 import vest.assist.jpa.JPAContext;
+import vest.assist.test.AssistBaseTest;
+import vest.assist.test.TestConfiguration;
 
-import javax.inject.Inject;
+@TestConfiguration(scan = "demo.app")
+public class JpaTest extends AssistBaseTest {
 
-public class JpaTest extends BaseTest {
-
-    @Inject
-    public JPAContext jpa;
+    public JPAContext jpa() {
+        return assist().instance(JPAContext.class);
+    }
 
     @Test
     public void init() {
-        jpa.inTransaction(em -> {
+        jpa().inTransaction(em -> {
             Message message = new Message();
             message.setTimestamp(System.currentTimeMillis());
             message.setUserId(1L);
@@ -21,7 +23,7 @@ public class JpaTest extends BaseTest {
             em.persist(message);
         });
 
-        jpa.managed(em -> {
+        jpa().managed(em -> {
             em.createQuery("select m from Message m", Message.class)
 //                    .setParameter("message", "message")
                     .getResultStream()

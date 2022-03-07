@@ -1,9 +1,8 @@
 package vest.assist.app;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.testng.Assert;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 public class Teapot {

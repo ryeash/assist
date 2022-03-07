@@ -8,7 +8,6 @@ import vest.assist.annotations.Scheduled;
 import vest.assist.util.MethodTarget;
 import vest.assist.util.Reflector;
 
-import javax.inject.Provider;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,11 +26,9 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ScheduledTaskInterceptor.class);
 
     private final Assist assist;
-    private final Provider<ScheduledExecutorService> lazyExecutor;
 
     public ScheduledTaskInterceptor(Assist assist) {
         this.assist = assist;
-        this.lazyExecutor = assist.lazyProviderFor(ScheduledExecutorService.class, null);
     }
 
     @Override
@@ -51,17 +48,10 @@ public class ScheduledTaskInterceptor implements InstanceInterceptor {
         ScheduledExecutorService scheduledExecutorService = getExecutor(scheduled);
         ScheduledRunnable runnable = new ScheduledRunnable(instance, method, assist, scheduled);
         long delay = Math.max(0, scheduled.delay());
-        ScheduledFuture<?> future;
-        switch (scheduled.type()) {
-            case FIXED_RATE:
-                future = scheduledExecutorService.scheduleAtFixedRate(runnable, delay, scheduled.period(), scheduled.unit());
-                break;
-            case FIXED_DELAY:
-                future = scheduledExecutorService.scheduleWithFixedDelay(runnable, delay, scheduled.period(), scheduled.unit());
-                break;
-            default:
-                throw new RuntimeException("unhandled run type: " + scheduled.type());
-        }
+        ScheduledFuture<?> future = switch (scheduled.type()) {
+            case FIXED_RATE -> scheduledExecutorService.scheduleAtFixedRate(runnable, delay, scheduled.period(), scheduled.unit());
+            case FIXED_DELAY -> scheduledExecutorService.scheduleWithFixedDelay(runnable, delay, scheduled.period(), scheduled.unit());
+        };
         runnable.setFutureHandle(future);
     }
 

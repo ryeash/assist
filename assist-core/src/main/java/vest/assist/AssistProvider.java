@@ -1,6 +1,7 @@
 package vest.assist;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
+
 import java.lang.annotation.Annotation;
 import java.util.List;
 

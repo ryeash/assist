@@ -1,9 +1,8 @@
 package vest.assist.app;
 
+import jakarta.inject.Named;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Import;
-
-import javax.inject.Named;
 
 public class TCImport {
 

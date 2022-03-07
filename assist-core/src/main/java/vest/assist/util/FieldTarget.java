@@ -1,6 +1,7 @@
 package vest.assist.util;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -24,7 +25,7 @@ public class FieldTarget implements AnnotatedElement {
     public FieldTarget(Field field) {
         this.field = field;
         try {
-            Reflector.makeAccessible(field);
+            Reflector.makeAccessible(null, field);
             this.setter = MethodHandles.lookup().unreflectSetter(field);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("unable to gather meta data for field " + Reflector.detailString(field), e);

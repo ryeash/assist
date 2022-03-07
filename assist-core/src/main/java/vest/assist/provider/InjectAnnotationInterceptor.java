@@ -1,12 +1,11 @@
 package vest.assist.provider;
 
+import jakarta.inject.Inject;
 import vest.assist.Assist;
 import vest.assist.InstanceInterceptor;
-import vest.assist.util.FieldTarget;
 import vest.assist.util.MethodTarget;
 import vest.assist.util.Reflector;
 
-import javax.inject.Inject;
 import java.util.Objects;
 
 /**
@@ -24,15 +23,6 @@ public class InjectAnnotationInterceptor implements InstanceInterceptor {
     public void intercept(Object instance) {
         Objects.requireNonNull(instance, "null pointers can not be injected");
         Reflector reflector = Reflector.of(instance);
-
-        for (FieldTarget fieldTarget : reflector.fields()) {
-            try {
-                fieldTarget.set(instance, assist.valueFor(fieldTarget.field()));
-            } catch (Throwable e) {
-                throw new RuntimeException("could not inject field: " + Reflector.detailString(fieldTarget), e);
-            }
-        }
-
         for (MethodTarget method : reflector.methods()) {
             if (method.isAnnotationPresent(Inject.class)) {
                 try {

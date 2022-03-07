@@ -1,5 +1,7 @@
 package vest.assist;
 
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -12,9 +14,6 @@ import vest.assist.app.Teapot;
 import vest.assist.util.PackageScanner;
 import vest.assist.util.Reflector;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
-
 public class MiscTest extends Assert {
 
     private static final Logger log = LoggerFactory.getLogger(MiscTest.class);
@@ -22,10 +21,6 @@ public class MiscTest extends Assert {
     @Test
     public void stringifyTest() {
         Reflector reflector = Reflector.of(TCCollectionInjection.class);
-
-        reflector.fields().stream()
-                .limit(1)
-                .forEach(f -> log.info(Reflector.detailString(f)));
 
         reflector.methods().stream()
                 .filter(m -> m.getParameterCount() > 0)

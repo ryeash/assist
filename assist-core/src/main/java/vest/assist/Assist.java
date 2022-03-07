@@ -1,5 +1,6 @@
 package vest.assist;
 
+import jakarta.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vest.assist.annotations.Configuration;
@@ -10,21 +11,19 @@ import vest.assist.annotations.Scan;
 import vest.assist.annotations.SkipInjection;
 import vest.assist.provider.AdHocProvider;
 import vest.assist.provider.ConstructorProvider;
+import vest.assist.provider.DeferredProvider;
 import vest.assist.provider.FactoryMethodProvider;
 import vest.assist.provider.InjectionProvider;
-import vest.assist.provider.LazyProvider;
 import vest.assist.provider.ScopeWrapper;
 import vest.assist.provider.ShutdownContainer;
 import vest.assist.util.MethodTarget;
 import vest.assist.util.PackageScanner;
 import vest.assist.util.Reflector;
 
-import javax.inject.Provider;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
@@ -81,7 +80,6 @@ public class Assist implements Closeable {
 
     private final ProviderIndex index = new ProviderIndex();
     private final List<ValueLookup> valueLookups = new ArrayList<>(8);
-    private final List<PlaceholderLookup> placeholderLookups = new ArrayList<>(8);
     private final List<InstanceInterceptor> interceptors = new ArrayList<>(8);
     private final List<ProviderWrapper> wrappers = new ArrayList<>(8);
     private final List<ConfigurationProcessor> configurationProcessors = new ArrayList<>(8);
@@ -103,8 +101,8 @@ public class Assist implements Closeable {
         }
 
         Optional.ofNullable(configurationScanBasePackages)
-                .map(Stream::of)
-                .orElse(Stream.empty())
+                .stream()
+                .flatMap(Stream::of)
                 .forEach(p -> packageScan(p, Configuration.class, this::addConfig));
     }
 
@@ -225,8 +223,8 @@ public class Assist implements Closeable {
      * @param qualifier the qualifier for the type
      * @return a lazy provider that will provide the desired type/qualifier combination
      */
-    public <T> Provider<T> lazyProviderFor(Class<T> type, Annotation qualifier) {
-        return new LazyProvider<>(this, type, qualifier);
+    public <T> Provider<T> deferredProvider(Class<T> type, Annotation qualifier) {
+        return new DeferredProvider<>(this, type, qualifier);
     }
 
     /**
@@ -313,7 +311,6 @@ public class Assist implements Closeable {
      *
      * @param config The configuration object
      */
-    @SuppressWarnings("unchecked")
     public void addConfig(Object config) {
         Objects.requireNonNull(config, "can not process null configuration class");
         Class<?> type = config.getClass();
@@ -335,7 +332,7 @@ public class Assist implements Closeable {
         // create providers from the @Factory methods
         Reflector reflector = Reflector.of(config);
 
-        List<FactoryMethodProvider> eagerFactories = new LinkedList<>();
+        List<Provider<?>> eagerFactories = new LinkedList<>();
         for (MethodTarget method : reflector.methods()) {
             if (method.isAnnotationPresent(Factory.class)) {
                 Class<?> returnType = method.getReturnType();
@@ -343,8 +340,8 @@ public class Assist implements Closeable {
                     throw new IllegalArgumentException(reflector.simpleName() + ": factory methods may not return void: " + Reflector.detailString(method));
                 }
 
-                FactoryMethodProvider factory = new FactoryMethodProvider(method, config, this);
-                AssistProvider p = buildProvider(factory, method.isAnnotationPresent(SkipInjection.class));
+                FactoryMethodProvider<?> factory = new FactoryMethodProvider<>(method, config, this);
+                AssistProvider<?> p = buildProvider(factory, method.isAnnotationPresent(SkipInjection.class));
 
                 log.info("{}: adding provider {} {}", Reflector.debugName(config.getClass()), returnType.getSimpleName(), p);
                 if (factory.qualifier() != null && factory.primary()) {
@@ -372,7 +369,7 @@ public class Assist implements Closeable {
         }
 
         // handle eager @Factory methods (they must be called after all other processing to avoid missing dependencies).
-        for (FactoryMethodProvider eagerFactory : eagerFactories) {
+        for (Provider<?> eagerFactory : eagerFactories) {
             log.info("{}: calling eager factory provider: {}", reflector.simpleName(), eagerFactory);
             eagerFactory.get();
         }
@@ -396,8 +393,7 @@ public class Assist implements Closeable {
      */
     public void register(Object obj) {
         boolean registered = false;
-        if (obj instanceof ValueLookup) {
-            ValueLookup valueLookup = (ValueLookup) obj;
+        if (obj instanceof ValueLookup valueLookup) {
             if (!valueLookups.contains(obj)) {
                 registered = true;
                 valueLookups.add(valueLookup);
@@ -405,8 +401,7 @@ public class Assist implements Closeable {
             }
         }
 
-        if (obj instanceof InstanceInterceptor) {
-            InstanceInterceptor interceptor = (InstanceInterceptor) obj;
+        if (obj instanceof InstanceInterceptor interceptor) {
             if (!interceptors.contains(interceptor)) {
                 registered = true;
                 interceptors.add(interceptor);
@@ -414,14 +409,12 @@ public class Assist implements Closeable {
             }
         }
 
-        if (obj instanceof ScopeFactory) {
+        if (obj instanceof ScopeFactory<?> scopeFactory) {
             ScopeWrapper scopeWrapper = instance(ScopeWrapper.class);
-            ScopeFactory scopeFactory = (ScopeFactory) obj;
             registered = scopeWrapper.register(scopeFactory);
         }
 
-        if (obj instanceof ProviderWrapper) {
-            ProviderWrapper wrapper = (ProviderWrapper) obj;
+        if (obj instanceof ProviderWrapper wrapper) {
             if (!wrappers.contains(wrapper)) {
                 registered = true;
                 wrappers.add(wrapper);
@@ -429,8 +422,7 @@ public class Assist implements Closeable {
             }
         }
 
-        if (obj instanceof ConfigurationProcessor) {
-            ConfigurationProcessor processor = (ConfigurationProcessor) obj;
+        if (obj instanceof ConfigurationProcessor processor) {
             if (!configurationProcessors.contains(processor)) {
                 registered = true;
                 configurationProcessors.add(processor);
@@ -438,14 +430,6 @@ public class Assist implements Closeable {
             }
         }
 
-        if (obj instanceof PlaceholderLookup) {
-            PlaceholderLookup placeholderLookup = (PlaceholderLookup) obj;
-            if (!placeholderLookups.contains(placeholderLookup)) {
-                registered = true;
-                placeholderLookups.add(placeholderLookup);
-                placeholderLookups.sort(Prioritized.PRIORITIZED_COMPARATOR);
-            }
-        }
         if (!registered) {
             log.warn("{} did not implement any known interfaces or was already registered", obj);
         }
@@ -636,16 +620,6 @@ public class Assist implements Closeable {
      */
     public Object valueFor(Parameter parameter) {
         return valueFor(parameter.getType(), parameter.getParameterizedType(), parameter);
-    }
-
-    /**
-     * Get the value for a field based on its type, annotations, and what is registered/injectable with this Assist instance.
-     *
-     * @param field The field to analyze and retrieve a value for
-     * @return The value found
-     */
-    public Object valueFor(Field field) {
-        return valueFor(field.getType(), field.getGenericType(), field);
     }
 
     /**

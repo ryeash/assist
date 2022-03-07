@@ -1,8 +1,8 @@
 package vest.assist.conf;
 
+import vest.assist.aop.Aspect;
 import vest.assist.aop.AspectInvocationHandler;
 import vest.assist.aop.Invocation;
-import vest.assist.aop.InvokeMethod;
 
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * methods. In cases where property polling is not a negligible in-memory lookup (e.g. a network call)
  * this class can be used to speed up property wiring. Internally uses a {@link ConcurrentHashMap} to store the values.
  */
-public class CachingFacade implements InvokeMethod {
+public class CachingFacade implements Aspect {
 
     public static ConfigurationFacade wrap(ConfigurationFacade facade) {
         AspectInvocationHandler aih = new AspectInvocationHandler(facade, new CachingFacade(facade));
@@ -32,18 +32,18 @@ public class CachingFacade implements InvokeMethod {
 
     private Object invokeMethod(Invocation invocation) {
         try {
-            return invocation.invoke();
+            return invocation.next();
         } catch (Throwable e) {
             throw new RuntimeException("error executing proxy'd method", e);
         }
     }
 
     @Override
-    public Object invoke(Invocation invocation) throws Throwable {
-        if (invocation.getMethod().getName().startsWith("get") && !invocation.getMethod().getName().equals("getStream")) {
+    public Object invoke(Invocation invocation) throws Exception {
+        if (invocation.method().getName().startsWith("get") && !invocation.method().getName().equals("getStream")) {
             return cache.computeIfAbsent(invocation, this::invokeMethod);
         }
-        switch (invocation.getMethod().getName()) {
+        switch (invocation.method().getName()) {
             case "reload":
                 cache.clear();
                 facade.reload();
@@ -51,7 +51,7 @@ public class CachingFacade implements InvokeMethod {
             case "toString":
                 return "CachingFacade(" + facade + ")";
             default:
-                return invocation.invoke();
+                return invocation.next();
         }
     }
 }

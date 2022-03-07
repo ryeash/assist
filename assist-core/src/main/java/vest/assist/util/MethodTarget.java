@@ -1,6 +1,7 @@
 package vest.assist.util;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -18,7 +19,7 @@ import java.util.Objects;
 /**
  * Represents a reflected method in a class. Provides some metadata and additional information for the method.
  */
-public class MethodTarget implements AnnotatedElement {
+public final class MethodTarget implements AnnotatedElement {
 
     private final Method method;
     private final Parameter[] parameters;
@@ -33,7 +34,7 @@ public class MethodTarget implements AnnotatedElement {
         this.parameterTypes = method.getParameterTypes();
         this.isStatic = Modifier.isStatic(method.getModifiers());
         try {
-            Reflector.makeAccessible(method);
+//            Reflector.makeAccessible(null, method);
             this.handle = MethodHandles.lookup().unreflect(method);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("error creating method handle", e);
@@ -105,6 +106,7 @@ public class MethodTarget implements AnnotatedElement {
         if (isStatic) {
             return Reflector.invoke(handle, null, args);
         } else {
+            Reflector.makeAccessible(obj, method);
             return Reflector.invoke(handle, obj, args);
         }
     }
@@ -177,7 +179,7 @@ public class MethodTarget implements AnnotatedElement {
     }
 
     public boolean isAccessible() {
-        return method.isAccessible();
+        return method.canAccess(this);
     }
 
     @Override

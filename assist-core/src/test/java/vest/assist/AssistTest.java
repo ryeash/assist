@@ -1,11 +1,15 @@
 package vest.assist;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import vest.assist.annotations.Configuration;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.SkipInjection;
 import vest.assist.app.BootConfig;
@@ -24,7 +28,6 @@ import vest.assist.app.ScannedComponent;
 import vest.assist.app.TCCollectionInjection;
 import vest.assist.app.TCCustomInjectAnnotation;
 import vest.assist.app.TCImport;
-import vest.assist.app.TCLazy;
 import vest.assist.app.TCMultipleDependenciesSatisfied;
 import vest.assist.app.TCOptional;
 import vest.assist.app.TCPropertyInjection;
@@ -35,9 +38,6 @@ import vest.assist.app.TCStaticInject;
 import vest.assist.app.Teapot;
 import vest.assist.util.PackageScanner;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 public class AssistTest extends Assert {
 
     private static final Logger log = LoggerFactory.getLogger(AssistTest.class);
+    public static final byte[] EMPTY_BUF = new byte[0];
 
     public void delay(long millis) {
         try {
@@ -162,18 +163,18 @@ public class AssistTest extends Assert {
         assertNotEquals(cm1.get(), cm2.get());
     }
 
-    @Inject
-    @Named("keurig")
     protected CoffeeMaker coffeeMaker;
-
-    @Inject
-    @Leather(color = Leather.Color.BLACK)
     private Coosie bl;
-
-    @Inject
-    @Leather(color = Leather.Color.RED)
     Provider<Coosie> rl;
 
+    @Inject
+    public void adhocInjectionSetter(@Named("keurig") CoffeeMaker coffeeMaker,
+                                     @Leather(color = Leather.Color.BLACK) Coosie bl,
+                                     @Leather(color = Leather.Color.RED) Provider<Coosie> rl) {
+        this.coffeeMaker = coffeeMaker;
+        this.bl = bl;
+        this.rl = rl;
+    }
 
     @Test
     public void testAdHocInjection() {
@@ -324,19 +325,15 @@ public class AssistTest extends Assert {
         assertNotNull(man.coffeeMakerSet);
         assertFalse(man.coffeeMakerSet.isEmpty());
 
-        assertNotNull(man.coffeeMakerCollection);
-        assertFalse(man.coffeeMakerCollection.isEmpty());
-
         CoffeeMaker cm = assist.instance(CoffeeMaker.class);
         assertTrue(man.coffeeMakers.contains(cm));
         assertTrue(man.coffeeMakerSet.contains(cm));
-        assertTrue(man.coffeeMakerCollection.contains(cm));
     }
 
     @Test
     public void optionalInject() {
         TCOptional instance = assist.instance(TCOptional.class);
-        assertTrue(instance.coffeMakerOpt.isPresent());
+        assertTrue(instance.coffeeMakerOpt.isPresent());
     }
 
     @Test
@@ -354,8 +351,8 @@ public class AssistTest extends Assert {
     public void scheduledTest() {
         TCScheduledMethods sched = assist.instance(TCScheduledMethods.class);
         delay(500);
-        assertEquals(sched.fixedDelayCount, 10);
-        assertEquals(sched.fixedRateCount, 10);
+        assertTrue(sched.fixedDelayCount > 5);
+        assertTrue(sched.fixedRateCount > 5);
         assertEquals(sched.limitedExecutions, 4);
         assertEquals(sched.alternateRun, 1);
     }
@@ -371,49 +368,18 @@ public class AssistTest extends Assert {
     }
 
     @Test
-    public void lazy() {
-        Assist a = new Assist();
-
-        TCLazy tc = a.instance(TCLazy.class);
-        assertThrows(() -> tc.lazyMaker.get());
-
-        a.addConfig(new Object() {
-            @Factory
-            public CoffeeMaker fp() {
-                return new FrenchPress();
-            }
-
-            @Factory
-            @Named("fancy")
-            public CoffeeMaker kg() {
-                return new PourOver();
-            }
-        });
-
-        log.info("{}", a);
-
-        assertNotNull(tc.lazyMaker.get());
-        assertNotNull(tc.lazyFancyMaker.get());
-        assertEquals(tc.lazyMaker.get().getClass(), FrenchPress.class);
-        assertEquals(tc.lazyFancyMaker.get().getClass(), PourOver.class);
-        assertEquals(tc.lazyMaker.get(), tc.lazyMaker.get());
-        assertEquals(tc.lazyFancyMaker.get(), tc.lazyFancyMaker.get());
-        assertNotEquals(tc.lazyMaker.get(), tc.lazyFancyMaker.get());
-    }
-
-    @Test
     public void testSkipInjection() {
         Assist assist = new Assist();
-        assist.addConfig(new Object() {
-            @Factory
-            @SkipInjection
-            public TCSkipInjection skipInjectionFactory() {
-                return new TCSkipInjection();
-            }
-        });
+        assist.addConfig(new SkipInjectConfig());
+        assist.instance(TCSkipInjection.class);
+    }
 
-        TCSkipInjection tc = assist.instance(TCSkipInjection.class);
-        assertNull(tc.coffeMaker);
+    public static final class SkipInjectConfig {
+        @Factory
+        @SkipInjection
+        public TCSkipInjection skipInjectionFactory() {
+            return new TCSkipInjection();
+        }
     }
 
     @Test
@@ -430,13 +396,7 @@ public class AssistTest extends Assert {
     @Test
     public void lotsOfCloseables() {
         Assist assist = new Assist();
-        assist.addConfig(new Object() {
-            @Factory
-            public InputStream is() {
-                return new ByteArrayInputStream(new byte[0]);
-            }
-        });
-
+        assist.addConfig(new JustAClosable());
         IntStream.range(0, 10000)
                 .parallel()
                 .mapToObj(i -> assist.instance(InputStream.class))
@@ -448,6 +408,14 @@ public class AssistTest extends Assert {
                     }
                 });
         assist.close();
+    }
+
+    @Configuration
+    public static final class JustAClosable {
+        @Factory
+        public InputStream is() {
+            return new ByteArrayInputStream(EMPTY_BUF);
+        }
     }
 
     @Test
@@ -462,10 +430,8 @@ public class AssistTest extends Assert {
 
     @Test
     public void staticInjection() {
-        assertNull(TCStaticInject.globalCoffeeMaker);
         assertFalse(TCStaticInject.methodInjected);
         assist.instance(TCStaticInject.class);
-        assertNotNull(TCStaticInject.globalCoffeeMaker);
         assertTrue(TCStaticInject.methodInjected);
     }
 }

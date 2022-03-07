@@ -1,6 +1,6 @@
 package vest.assist.app;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class Child extends Parent {
 

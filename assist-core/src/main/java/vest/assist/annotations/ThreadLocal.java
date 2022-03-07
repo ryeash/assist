@@ -1,6 +1,7 @@
 package vest.assist.annotations;
 
-import javax.inject.Scope;
+import jakarta.inject.Scope;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

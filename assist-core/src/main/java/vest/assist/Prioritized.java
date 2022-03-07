@@ -9,6 +9,9 @@ public interface Prioritized {
 
     Comparator<Prioritized> PRIORITIZED_COMPARATOR = Comparator.comparingInt(Prioritized::priority);
 
+    int HIGHEST_PRIORITY = Integer.MIN_VALUE;
+    int LOWEST_PRIORITY = Integer.MAX_VALUE;
+
     /**
      * The priority of this class relative to other similarly typed classes. Lower numbers are interpreted as
      * higher priority, e.g. priority 100 comes before priority 200.

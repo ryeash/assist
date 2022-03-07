@@ -1,20 +1,10 @@
 package vest.assist.aop;
 
+import vest.assist.Prioritized;
+
 /**
  * Base Aspect interface.
- *
- * @see BeforeMethod
- * @see AfterMethod
- * @see InvokeMethod
  */
-public interface Aspect {
-
-    /**
-     * Initialize with the target instance that invocations will execute against.
-     *
-     * @param instance the object instance that method invocations will target
-     */
-    default void init(Object instance) {
-        // no-op
-    }
+public interface Aspect extends Prioritized {
+    Object invoke(Invocation invocation) throws Exception;
 }

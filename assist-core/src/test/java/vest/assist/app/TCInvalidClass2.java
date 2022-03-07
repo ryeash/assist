@@ -1,6 +1,6 @@
 package vest.assist.app;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 // validates that an injectable class must have either
 // a no-arg constructor or ONE @Inject constructor

@@ -1,14 +1,16 @@
 package vest.assist.app;
 
+import jakarta.inject.Inject;
 import org.slf4j.Logger;
-
-import javax.inject.Inject;
 
 public class TCCustomInjectAnnotation {
 
-    @Inject
-    @Log
     private Logger log;
+
+    @Inject
+    public TCCustomInjectAnnotation(@Log Logger log) {
+        this.log = log;
+    }
 
     public void logSomething() {
         log.info("something");

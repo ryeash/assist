@@ -11,6 +11,7 @@
     <modules>
         <module>assist-core</module>
         <module>assist-jpa</module>
+        <module>assist-test</module>
         <module>test-bed</module>
     </modules>
 
@@ -40,8 +41,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <compiler.version>1.8</compiler.version>
-        <slf4j.version>1.7.26</slf4j.version>
+        <compiler.version>17</compiler.version>
+        <slf4j.version>1.7.36</slf4j.version>
     </properties>
 
     <dependencyManagement>
@@ -57,14 +58,14 @@
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>1</version>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>2.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
-                <version>6.14.3</version>
+                <version>7.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -90,24 +91,24 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.eluder.coveralls</groupId>
-                <artifactId>coveralls-maven-plugin</artifactId>
-                <version>4.3.0</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.4</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.eluder.coveralls</groupId>-->
+            <!--                <artifactId>coveralls-maven-plugin</artifactId>-->
+            <!--                <version>4.3.0</version>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.jacoco</groupId>-->
+            <!--                <artifactId>jacoco-maven-plugin</artifactId>-->
+            <!--                <version>0.8.7</version>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>prepare-agent</id>-->
+            <!--                        <goals>-->
+            <!--                            <goal>prepare-agent</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

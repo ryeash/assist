@@ -9,8 +9,6 @@ import vest.assist.util.Reflector;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,7 +37,7 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
         this.method = method;
         this.methodParameters = method.getParameters();
         this.instance = instance;
-        this.annotations = Collections.unmodifiableList(Arrays.asList(method.getAnnotations()));
+        this.annotations = List.of(method.getAnnotations());
         this.eager = method.isAnnotationPresent(Eager.class);
         this.primary = method.isAnnotationPresent(Primary.class);
     }
@@ -107,10 +105,9 @@ public class FactoryMethodProvider<T> implements AssistProvider<T> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AssistProvider)) {
+        if (!(o instanceof AssistProvider<?> that)) {
             return false;
         }
-        AssistProvider<?> that = (AssistProvider<?>) o;
         return Objects.equals(type(), that.type()) && Objects.equals(qualifier(), that.qualifier());
     }
 

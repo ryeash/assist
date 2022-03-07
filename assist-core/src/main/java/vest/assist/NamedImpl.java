@@ -1,6 +1,7 @@
 package vest.assist;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
+
 import java.lang.annotation.Annotation;
 import java.util.Objects;
 

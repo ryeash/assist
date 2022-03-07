@@ -1,6 +1,7 @@
 package vest.assist.annotations;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

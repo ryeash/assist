@@ -1,9 +1,9 @@
 package vest.assist.provider;
 
+import jakarta.inject.Singleton;
 import vest.assist.AssistProvider;
 import vest.assist.ScopeFactory;
 
-import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 
 /**

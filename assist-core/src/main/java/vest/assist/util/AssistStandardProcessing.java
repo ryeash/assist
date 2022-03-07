@@ -4,7 +4,6 @@ import vest.assist.Assist;
 import vest.assist.AssistContextBootstrapper;
 import vest.assist.provider.AspectWrapper;
 import vest.assist.provider.InjectAnnotationInterceptor;
-import vest.assist.provider.LazyLookup;
 import vest.assist.provider.PropertyInjector;
 import vest.assist.provider.ProviderTypeValueLookup;
 import vest.assist.provider.ScheduledTaskInterceptor;
@@ -25,7 +24,6 @@ public class AssistStandardProcessing implements AssistContextBootstrapper {
         assist.register(new PropertyInjector(assist));
         assist.register(new InjectAnnotationInterceptor(assist));
         assist.register(new ScheduledTaskInterceptor(assist));
-        assist.register(new LazyLookup(assist));
     }
 
     @Override

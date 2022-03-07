@@ -3,7 +3,6 @@ package vest.assist;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import vest.assist.annotations.Property;
 import vest.assist.conf.Builder;
 import vest.assist.conf.ConfigurationFacade;
 import vest.assist.conf.DefaultConfigurationFacade;
@@ -182,25 +181,6 @@ public class ConfigurationTest extends Assert {
 
         conf.setListDelimiter('|');
         assertEquals(conf.getList("list2"), expected);
-    }
-
-
-    @Test
-    public void required() {
-        Assist assist = new Assist();
-        DefaultConfigurationFacade conf = new DefaultConfigurationFacade(Collections.emptyList());
-        assist.setSingleton(ConfigurationFacade.class, conf);
-
-        assertThrows(IllegalArgumentException.class, () ->
-                assist.inject(new Object() {
-                    @Property(value = "missing")
-                    private String notFound;
-                }));
-
-        assist.inject(new Object() {
-            @Property(value = "missing", required = false)
-            private String notFound;
-        });
     }
 
     @Test

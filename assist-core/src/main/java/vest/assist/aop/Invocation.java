@@ -1,122 +1,50 @@
 package vest.assist.aop;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
 
 /**
- * Represents an individual invocation of a method for the purposes of Aspect weaving.
+ * Represents an individual invocation of a method.
  */
-public class Invocation {
-    private Object instance;
-    private Method method;
-    private Object[] args;
-
-    public Invocation(Object instance, Method method, Object[] args) {
-        this.instance = instance;
-        this.method = Objects.requireNonNull(method);
-        this.args = args;
-    }
+public interface Invocation {
 
     /**
      * Get the object the underlying method is invoked from
      */
-    public Object getInstance() {
-        return instance;
-    }
+    Object instance();
 
     /**
-     * Set/replace the object that the underlying method will be invoked from
+     * Get the method that was invoked.
      */
-    public void setInstance(Object instance) {
-        this.instance = instance;
-    }
+    Method method();
 
     /**
-     * Get the method that was invoked
+     * Get the arguments that the method was invoked with.
      */
-    public Method getMethod() {
-        return method;
-    }
+    List<MethodArgument> args();
 
     /**
-     * Swap out the invoked method with the given method
+     * Get the method argument for the given index.
      */
-    public void setMethod(Method method) {
-        this.method = Objects.requireNonNull(method);
-    }
+    MethodArgument arg(int index);
 
     /**
-     * Get the arguments that the underlying method was called with. The returned array is not a copy, altering the
-     * array will alter the eventual invocation of the underlying method.
+     * Get the number of parameters the method accepts.
      */
-    public Object[] getArgs() {
-        return args;
-    }
+    int arity();
 
     /**
-     * Set the arguments that will be used to invoke the underlying method
-     */
-    public void setArgs(Object... args) {
-        int length = args != null ? args.length : 0;
-        if (length != method.getParameterCount()) {
-            throw new IllegalArgumentException("wrong number of parameters; expected" + method.getParameterCount() + " given " + length);
-        }
-        this.args = args;
-    }
-
-    /**
-     * Get the number of arguments passed into the method when it was invoked
-     */
-    public int getArgCount() {
-        return args != null ? args.length : 0;
-    }
-
-    /**
-     * Invoke the underlying method using the instance and arguments that are currently set on this Invocation.
+     * Pass aspect invocation to the next step in the aspect chain.
      *
-     * @return The result of invoking the method
-     * @throws Throwable for any error caused by invoking the method
+     * @return the result of continuing the aspect execution
      */
-    public Object invoke() throws Throwable {
-        return method.invoke(instance, args);
-    }
+    Object next() throws Exception;
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (instance != null) {
-            sb.append(instance.getClass().getSimpleName());
-        } else {
-            sb.append(method.getDeclaringClass().getSimpleName());
-        }
-        sb.append('.').append(method.getName());
-        if (args == null || args.length == 0) {
-            sb.append("()");
-        } else {
-            sb.append(Stream.of(args).map(String::valueOf).collect(Collectors.joining(", ", "(", ")")));
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Invocation that = (Invocation) o;
-        return Objects.equals(instance, that.instance)
-                && Objects.equals(method, that.method)
-                && Arrays.equals(args, that.args);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(instance, method) * 31 * Arrays.deepHashCode(args);
-    }
+    /**
+     * Invoke the method on the instance and return the result. Unless you have a
+     * need to short circuit aspect execution, the {@link #next()} method should be preferred.
+     *
+     * @return the result of executing the method with the current arguments
+     */
+    Object invoke() throws Exception;
 }

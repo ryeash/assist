@@ -1,5 +1,8 @@
 package vest.assist.app;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.testng.Assert;
 import vest.assist.Assist;
 import vest.assist.annotations.Aspects;
@@ -11,9 +14,6 @@ import vest.assist.annotations.ThreadLocal;
 import vest.assist.conf.ConfigurationFacade;
 import vest.assist.util.ExecutorBuilder;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;

@@ -1,11 +1,8 @@
 package vest.assist.app;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class TCStaticInject {
-
-    @Inject
-    public static CoffeeMaker globalCoffeeMaker;
 
     public static boolean methodInjected = false;
 

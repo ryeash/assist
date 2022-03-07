@@ -1,8 +1,7 @@
 package vest.assist.app;
 
+import jakarta.inject.Named;
 import vest.assist.annotations.Aspects;
-
-import javax.inject.Named;
 
 @Aspects(LoggingAspect.class)
 @Named("pourOver")

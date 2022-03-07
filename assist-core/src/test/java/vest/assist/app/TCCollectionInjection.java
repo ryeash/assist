@@ -1,7 +1,7 @@
 package vest.assist.app;
 
-import javax.inject.Inject;
-import java.util.Collection;
+import jakarta.inject.Inject;
+
 import java.util.List;
 import java.util.Set;
 
@@ -10,9 +10,6 @@ public class TCCollectionInjection {
 
     public List<CoffeeMaker> coffeeMakers;
     public Set<CoffeeMaker> coffeeMakerSet;
-
-    @Inject
-    public Collection<CoffeeMaker> coffeeMakerCollection;
 
     @Inject
     public TCCollectionInjection(List<CoffeeMaker> coffeeMakers) {

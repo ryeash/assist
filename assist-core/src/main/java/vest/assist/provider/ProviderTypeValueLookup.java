@@ -1,10 +1,10 @@
 package vest.assist.provider;
 
+import jakarta.inject.Provider;
 import vest.assist.Assist;
 import vest.assist.ValueLookup;
 import vest.assist.util.Reflector;
 
-import javax.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;

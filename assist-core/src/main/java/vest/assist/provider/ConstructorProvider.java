@@ -1,12 +1,12 @@
 package vest.assist.provider;
 
+import jakarta.inject.Inject;
 import vest.assist.Assist;
 import vest.assist.AssistProvider;
 import vest.assist.annotations.Eager;
 import vest.assist.annotations.Primary;
 import vest.assist.util.Reflector;
 
-import javax.inject.Inject;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -129,7 +129,7 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Constructor<T> injectableConstructor(Class type) {
+    private <T> Constructor<T> injectableConstructor(Class type) {
         if (Modifier.isAbstract(type.getModifiers()) || type.isInterface()) {
             throw new IllegalArgumentException("interfaces/abstract classes do not have injectable constructors");
         }
@@ -158,7 +158,7 @@ public class ConstructorProvider<T> implements AssistProvider<T> {
 
         Constructor<T> constructor = list.getFirst();
 
-        Reflector.makeAccessible(constructor);
+        Reflector.makeAccessible(null, constructor);
         return constructor;
     }
 }

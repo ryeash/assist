@@ -1,12 +1,12 @@
 package demo.app;
 
+import jakarta.inject.Singleton;
 import vest.assist.annotations.Configuration;
 import vest.assist.annotations.Factory;
 import vest.assist.annotations.Scan;
 import vest.assist.conf.ConfigurationFacade;
 import vest.assist.jpa.JPAContextBootstrapper;
 
-import javax.inject.Singleton;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceProperty;
 import javax.persistence.SynchronizationType;

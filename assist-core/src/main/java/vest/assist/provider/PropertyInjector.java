@@ -1,15 +1,12 @@
 package vest.assist.provider;
 
+import jakarta.inject.Provider;
 import vest.assist.Assist;
-import vest.assist.InstanceInterceptor;
 import vest.assist.ValueLookup;
 import vest.assist.annotations.Property;
 import vest.assist.conf.ConfigurationFacade;
-import vest.assist.util.FieldTarget;
 import vest.assist.util.Reflector;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -18,34 +15,12 @@ import java.util.Set;
 /**
  * Responsible for injecting Field and Parameter values annotated with {@link Property}.
  */
-public class PropertyInjector implements InstanceInterceptor, ValueLookup {
+public class PropertyInjector implements ValueLookup {
 
     private final Provider<ConfigurationFacade> lazyConf;
 
     public PropertyInjector(Assist assist) {
-        this.lazyConf = assist.lazyProviderFor(ConfigurationFacade.class, null);
-    }
-
-    @Override
-    public void intercept(Object instance) {
-        for (FieldTarget fieldTarget : Reflector.of(instance).fields()) {
-            // we ignore the @Inject fields because they will be lookup up used the ValueLookup part of this class
-            if (fieldTarget.isAnnotationPresent(Property.class) && !fieldTarget.isAnnotationPresent(Inject.class)) {
-                Property prop = fieldTarget.getAnnotation(Property.class);
-                try {
-                    Object value = getProperty(prop, fieldTarget.getType(), fieldTarget.getGenericType());
-                    if (value == null && prop.required()) {
-                        throw new IllegalArgumentException("missing property: " + prop.value() + ", for " + Reflector.detailString(fieldTarget));
-                    }
-                    fieldTarget.set(instance, value);
-                } catch (Throwable e) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    }
-                    throw new RuntimeException("error setting field to property value", e);
-                }
-            }
-        }
+        this.lazyConf = assist.deferredProvider(ConfigurationFacade.class, null);
     }
 
     @Override

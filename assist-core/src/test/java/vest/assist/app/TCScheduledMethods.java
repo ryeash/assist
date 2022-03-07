@@ -18,12 +18,12 @@ public class TCScheduledMethods {
     public int alternateRun;
 
     @Scheduled(type = FIXED_RATE, period = 50)
-    private void scheduledFixedRateMethod() {
+    public void scheduledFixedRateMethod() {
         fixedRateCount++;
     }
 
     @Scheduled(type = FIXED_DELAY, period = 1)
-    private void scheduledFixedDelayMethod() {
+    public void scheduledFixedDelayMethod() {
         fixedDelayCount++;
         try {
             Thread.sleep(50);
@@ -33,7 +33,7 @@ public class TCScheduledMethods {
     }
 
     @Scheduled(type = FIXED_RATE, period = 3, executions = 4)
-    private void scheduledLimitedExecutions(CoffeeMaker cm) {
+    public void scheduledLimitedExecutions(CoffeeMaker cm) {
         Assert.assertNotNull(cm);
         limitedExecutions++;
     }

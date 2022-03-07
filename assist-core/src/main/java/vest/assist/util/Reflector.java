@@ -1,16 +1,17 @@
 package vest.assist.util;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Qualifier;
+import jakarta.inject.Scope;
 import vest.assist.annotations.Extension;
 
-import javax.inject.Inject;
-import javax.inject.Qualifier;
-import javax.inject.Scope;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -53,7 +54,7 @@ public class Reflector {
      * @param type The type to analyze
      * @return The Reflector for the type, if the Reflector has already been create once, a cached Reflector will be returned
      */
-    public static Reflector of(Class type) {
+    public static Reflector of(Class<?> type) {
         return CACHE.computeIfAbsent(new ClassKey(type), Reflector::new);
     }
 
@@ -65,12 +66,11 @@ public class Reflector {
         QUALIFIER_CACHE.clear();
     }
 
-    private final Class type;
+    private final Class<?> type;
     private final String simpleName;
     private final Annotation scope;
     private final Annotation qualifier;
-    private final Collection<Class> hierarchy;
-    private final Collection<FieldTarget> fields;
+    private final Collection<Class<?>> hierarchy;
     private final Collection<MethodTarget> methods;
 
     private Reflector(ClassKey key) {
@@ -79,23 +79,22 @@ public class Reflector {
         this.scope = getScope(type);
         this.qualifier = getQualifier(type);
 
-        LinkedList<Class> typeHierarchy = new LinkedList<>(Arrays.asList(type.getInterfaces()));
+        LinkedList<Class<?>> typeHierarchy = new LinkedList<>(Arrays.asList(type.getInterfaces()));
         LinkedList<MethodTarget> typeMethods = new LinkedList<>();
         Set<MethodTarget> methodTracker = new HashSet<>(32);
-        Set<FieldTarget> typeFields = new HashSet<>(16);
 
-        Class temp = type;
+        Class<?> temp = type;
         while (temp != null && temp != Object.class) {
             typeHierarchy.addFirst(temp);
 
             for (Field field : temp.getDeclaredFields()) {
                 if (injectOrExtension(field)) {
-                    typeFields.add(new FieldTarget(field));
+                    throw new RuntimeException("field injection is not supported: " + Reflector.detailString(field));
                 }
             }
 
             for (Method method : temp.getDeclaredMethods()) {
-                if (injectOrExtension(method)) {
+                if (Modifier.isPublic(method.getModifiers()) && injectOrExtension(method)) {
                     MethodTarget methodTarget = new MethodTarget(method);
                     if (methodTracker.add(methodTarget)) {
                         typeMethods.addFirst(methodTarget);
@@ -107,7 +106,6 @@ public class Reflector {
 
         this.hierarchy = Collections.unmodifiableCollection(typeHierarchy);
         this.methods = Collections.unmodifiableCollection(typeMethods);
-        this.fields = Collections.unmodifiableCollection(typeFields);
     }
 
     private static boolean injectOrExtension(AnnotatedElement annotatedElement) {
@@ -117,7 +115,7 @@ public class Reflector {
     /**
      * @return The type of this Reflector
      */
-    public Class type() {
+    public Class<?> type() {
         return type;
     }
 
@@ -145,15 +143,8 @@ public class Reflector {
     /**
      * @return The class hierarchy of the reflected type
      */
-    public Collection<Class> hierarchy() {
+    public Collection<Class<?>> hierarchy() {
         return hierarchy;
-    }
-
-    /**
-     * @return A stream of all fields defined for the reflected type; includes all access levels, inherited, and static fields
-     */
-    public Collection<FieldTarget> fields() {
-        return fields;
     }
 
     /**
@@ -171,7 +162,7 @@ public class Reflector {
 
     /**
      * Get the first annotation on the given element identified as a qualifier annotation. A qualifier must have the
-     * {@link Qualifier} annotation attached to it. See {@link javax.inject.Named} as an example.
+     * {@link Qualifier} annotation attached to it. See {@link jakarta.inject.Named} as an example.
      *
      * @param annotatedElement The element to get the qualifier from
      * @return The first qualifier found on the element or null if none exists
@@ -182,7 +173,7 @@ public class Reflector {
 
     /**
      * Get the first annotation on the given element identified as a scope annotation. A scope must have the
-     * {@link Scope} annotation attached to it. See {@link javax.inject.Singleton} as an example.
+     * {@link Scope} annotation attached to it. See {@link jakarta.inject.Singleton} as an example.
      *
      * @param annotatedElement the element to get the scope from
      * @return The first scope found on the element or null if none exists
@@ -191,7 +182,7 @@ public class Reflector {
         return getAnnotationWithExtension(annotatedElement, Scope.class);
     }
 
-    private static Annotation getAnnotationWithExtension(AnnotatedElement annotatedElement, Class<? extends Annotation> parentAnnotation) {
+    public static Annotation getAnnotationWithExtension(AnnotatedElement annotatedElement, Class<? extends Annotation> parentAnnotation) {
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             if (annotation.annotationType() == parentAnnotation) {
                 return annotation;
@@ -228,8 +219,8 @@ public class Reflector {
      *
      * @param ao The object to set accessibility for
      */
-    public static void makeAccessible(AccessibleObject ao) {
-        if (!ao.isAccessible()) {
+    public static void makeAccessible(Object accessor, AccessibleObject ao) {
+        if (!ao.canAccess(accessor)) {
             ao.setAccessible(true);
         }
     }
@@ -242,22 +233,19 @@ public class Reflector {
      * @return A detailed string describing the given annotated element
      */
     public static String detailString(AnnotatedElement annotatedElement) {
-        if (annotatedElement instanceof Field) {
-            Field f = (Field) annotatedElement;
+        if (annotatedElement instanceof Field f) {
             return "Field{"
                     + "name=" + f.getName()
                     + ", type=" + f.getType().getCanonicalName()
                     + ", declaredIn=" + debugName(f.getDeclaringClass())
                     + '}';
-        } else if (annotatedElement instanceof Parameter) {
-            Parameter p = (Parameter) annotatedElement;
+        } else if (annotatedElement instanceof Parameter p) {
             return "Parameter{"
                     + "name=" + p.getName()
                     + ", executable=" + p.getDeclaringExecutable()
                     + ", declaredIn=" + debugName(p.getDeclaringExecutable().getDeclaringClass())
                     + '}';
-        } else if (annotatedElement instanceof Method) {
-            Method m = (Method) annotatedElement;
+        } else if (annotatedElement instanceof Method m) {
             return "Method{"
                     + "name=" + m.getName()
                     + ", paramTypes=" + Arrays.toString(m.getParameterTypes())
@@ -276,7 +264,7 @@ public class Reflector {
      * @param c The class to get the debug name for
      * @return The debug name of the class
      */
-    public static String debugName(Class c) {
+    public static String debugName(Class<?> c) {
         if (c.isArray()) {
             return c.getTypeName();
         } else if (c.getCanonicalName() != null) {
@@ -337,15 +325,15 @@ public class Reflector {
     }
 
     private static final class ClassKey {
-        private final Class type;
+        private final Class<?> type;
         private final int hash;
 
-        public ClassKey(Class type) {
+        public ClassKey(Class<?> type) {
             this.type = type;
             this.hash = type.toString().hashCode();
         }
 
-        public Class type() {
+        public Class<?> type() {
             return type;
         }
 

@@ -3,7 +3,9 @@ package vest.assist.aop;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -12,61 +14,49 @@ import java.util.List;
 public class AspectInvocationHandler implements InvocationHandler {
 
     protected final Object instance;
-    private final List<BeforeMethod> beforeMethods;
-    private InvokeMethod invoke;
-    private final List<AfterMethod> afterMethods;
+    protected final List<Aspect> aspects;
 
     public AspectInvocationHandler(Object instance, Aspect... aspects) {
         this.instance = instance;
-        beforeMethods = new LinkedList<>();
-        afterMethods = new LinkedList<>();
-        for (Aspect aspect : aspects) {
-            boolean known = false;
-            if (aspect instanceof BeforeMethod) {
-                known = true;
-                beforeMethods.add((BeforeMethod) aspect);
-            }
-            if (aspect instanceof InvokeMethod) {
-                known = true;
-                invoke = (InvokeMethod) aspect;
-            }
-            if (aspect instanceof AfterMethod) {
-                known = true;
-                afterMethods.add((AfterMethod) aspect);
-            }
-            if (!known) {
-                throw new IllegalArgumentException("unknown aspect implementation: " + aspect.getClass().getSimpleName());
-            }
-            aspect.init(instance);
-        }
-        if (invoke == null) {
-            invoke = Invocation::invoke;
-        }
+        this.aspects = List.of(aspects);
     }
 
     @Override
     public final Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Invocation invocation = new Invocation(instance, method, args);
-        Object result;
-        try {
-            for (BeforeMethod beforeMethod : beforeMethods) {
-                beforeMethod.before(invocation);
+        List<MethodArgument> arguments;
+        if (args == null || args.length == 0) {
+            arguments = List.of();
+        } else {
+            arguments = new ArrayList<>(args.length);
+            Parameter[] parameters = method.getParameters();
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                Object v = args[i];
+                arguments.add(new MethodArgumentImpl(v, parameter));
             }
-            result = invoke.invoke(invocation);
+        }
+        AspectChain chain = new AspectChainImpl(aspects.iterator());
+        InvocationImpl invocation = new InvocationImpl(instance, method, arguments, chain);
+        try {
+            return chain.next(invocation);
         } catch (Throwable t) {
-            result = t;
-        }
-        for (AfterMethod afterMethod : afterMethods) {
-            result = afterMethod.after(invocation, result);
-        }
-        if (result instanceof Throwable) {
-            Throwable t = (Throwable) result;
             if (t instanceof InvocationTargetException && t.getCause() != null) {
                 throw t.getCause();
             } else {
                 throw t;
             }
         }
-        return result;
+    }
+
+    private record AspectChainImpl(Iterator<Aspect> iterator) implements AspectChain {
+
+        @Override
+        public Object next(InvocationImpl invocation) throws Exception {
+            if (iterator.hasNext()) {
+                return iterator.next().invoke(invocation);
+            } else {
+                return invocation.invoke();
+            }
+        }
     }
 }
